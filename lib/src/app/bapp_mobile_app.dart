@@ -479,12 +479,17 @@ class _BappMobileAppState extends State<BappMobileApp> {
 
   /// Runs an action by task code directly (used by overlay action menus /
   /// buttons that already resolved the code string).
+  ///
+  /// [extra] carries any device-scan payload (e.g. `{'code': '…'}` from a
+  /// scanner node) that should be merged into the task payload.
   Future<void> _runActionByCode(
-      String code, Map<String, dynamic>? record) async {
+      String code, Map<String, dynamic>? record,
+      [Map<String, dynamic>? extra]) async {
     if (code.isEmpty) return;
     final payload = <String, dynamic>{};
     final id = record?['id'];
     if (id != null) payload['pk'] = id;
+    if (extra != null) payload.addAll(extra);
     final result = await ActionRunner(_api!).run(code, payload);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -497,9 +502,10 @@ class _BappMobileAppState extends State<BappMobileApp> {
     }
   }
 
-  Future<void> _runAction(Node button, Map<String, dynamic>? record) async {
+  Future<void> _runAction(Node button, Map<String, dynamic>? record,
+      [Map<String, dynamic>? extra]) async {
     final code = button.props['task'] as String?;
     if (code == null) return;
-    await _runActionByCode(code, record);
+    await _runActionByCode(code, record, extra);
   }
 }

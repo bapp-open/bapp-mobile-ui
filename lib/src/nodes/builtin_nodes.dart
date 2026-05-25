@@ -3,6 +3,7 @@ import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/nodes/field_widget.dart';
 import 'package:bapp_mobile_ui/src/nodes/input_nodes.dart';
+import 'package:bapp_mobile_ui/src/nodes/device_nodes.dart';
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
 import 'package:bapp_mobile_ui/src/render/record_scope.dart';
 import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
@@ -85,6 +86,7 @@ void registerBuiltinNodes(NodeRegistry registry) {
     );
   });
   registerInputNodes(registry);
+  registerDeviceNodes(registry);
 }
 
 IconData _iconFor(String? name) {

@@ -132,7 +132,7 @@ class _DetailScreenViewState extends State<DetailScreenView> {
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(12),
             child: BappActionDispatcher(
-              onAction: (Node n, Map<String, dynamic>? rec) =>
+              onAction: (Node n, Map<String, dynamic>? rec, [Map<String, dynamic>? extra]) =>
                   _runAction(n.props['task'] as String? ?? ''),
               child: BappNavigationDispatcher(
                 onNavigate: _onNavigate,

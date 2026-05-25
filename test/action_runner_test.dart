@@ -67,7 +67,7 @@ void main() {
     await t.pumpWidget(MaterialApp(
       home: Scaffold(
         body: BappActionDispatcher(
-          onAction: (n, rec) async {
+          onAction: (n, rec, [extra]) async {
             gotNode = n;
             gotRecord = rec;
           },

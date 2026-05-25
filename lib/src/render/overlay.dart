@@ -69,7 +69,7 @@ class _OverlayBody extends StatelessWidget {
   });
 
   Widget _wrap(Widget child) => BappActionDispatcher(
-        onAction: (n, rec) =>
+        onAction: (n, rec, [extra]) =>
             onAction(n.props['task'] as String? ?? '', rec ?? record),
         child: BappNavigationDispatcher(
           onNavigate: onNavigate,

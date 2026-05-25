@@ -127,3 +127,58 @@ BappMobileApp(
 
 See `example/` for a runnable host. Running it requires a live bapp_framework
 backend with a matching mobile app (e.g. the `vault` sample).
+
+## Device features & permissions
+
+The SDK includes five built-in device-feature node kinds rendered by the
+backend when it emits `scanner-button`, `scanner-stream`, `nfc-button`,
+`nfc-stream`, or `connectivity` nodes. They depend on real device hardware
+and **cannot be exercised in unit tests** (camera/NFC are stubbed out in the
+test suite). You must add the following platform declarations to every host
+app that consumes this package.
+
+### Android — `android/app/src/main/AndroidManifest.xml`
+
+```xml
+<!-- Camera (scanner nodes) -->
+<uses-permission android:name="android.permission.CAMERA"/>
+
+<!-- NFC nodes -->
+<uses-permission android:name="android.permission.NFC"/>
+<uses-feature android:name="android.hardware.nfc" android:required="false"/>
+```
+
+`mobile_scanner` also requires `minSdkVersion 21` in `android/app/build.gradle`.
+
+### iOS — `ios/Runner/Info.plist`
+
+```xml
+<!-- Camera (scanner nodes) -->
+<key>NSCameraUsageDescription</key>
+<string>Used to scan barcodes and QR codes.</string>
+
+<!-- NFC nodes -->
+<key>NFCReaderUsageDescription</key>
+<string>Used to read NFC tags.</string>
+```
+
+For NFC you also need the **Near Field Communication Tag Reading** capability
+in Xcode (Signing & Capabilities tab) and the `com.apple.developer.nfc.readersession.formats`
+entitlement in your `.entitlements` file:
+
+```xml
+<key>com.apple.developer.nfc.readersession.formats</key>
+<array>
+  <string>TAG</string>
+</array>
+```
+
+iOS NFC requires a physical device — the Simulator does not expose NFC hardware.
+
+### Package versions
+
+| Package | Version |
+|---------|---------|
+| `mobile_scanner` | ^7.2.0 |
+| `nfc_manager` | ^4.0.0 |
+| `connectivity_plus` | ^7.1.1 |
