@@ -12,3 +12,5 @@ example/.dart_tool/
 example/build/
 example/.flutter-plugins
 example/.flutter-plugins-dependencies
+# Local dev config (uncommitted backend details; copy from bapp_dev.example.json)
+example/bapp_dev.json
