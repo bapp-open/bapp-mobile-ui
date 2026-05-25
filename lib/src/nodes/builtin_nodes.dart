@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/nodes/field_widget.dart';
+import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
+import 'package:bapp_mobile_ui/src/render/record_scope.dart';
 
 /// Registers the v1 built-in node kinds into [registry]. `list` is intentionally
 /// NOT registered here — it is handled by the list template.
@@ -51,9 +53,12 @@ void registerBuiltinNodes(NodeRegistry registry) {
 Widget _button(BuildContext context, Node node) {
   final label = node.props['label'] as String? ?? '';
   final style = node.props['style'] as String? ?? 'primary';
-  // onPressed is wired by the ActionRunner in a later task; no-op for now so
-  // the button is visible and tappable without error.
-  void onPressed() {}
+  void onPressed() {
+    final dispatcher = BappActionDispatcher.of(context);
+    if (dispatcher != null) {
+      dispatcher.onAction(node, RecordScope.of(context));
+    }
+  }
   switch (style) {
     case 'text':
       return TextButton(onPressed: onPressed, child: Text(label));
