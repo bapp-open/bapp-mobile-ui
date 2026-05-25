@@ -14,6 +14,8 @@ Map<String, dynamic> _f(String n) =>
 
 class FakeDetailApi implements MobileApi {
   @override
+  Future<Map<String, dynamic>> access() async => {'user': {}, 'memberships': []};
+  @override
   Future<Map<String, dynamic>> bootstrap(String project) async => {};
   @override
   Future<Map<String, dynamic>> listIntrospect(String ct, String p) async => {};

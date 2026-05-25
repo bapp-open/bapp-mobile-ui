@@ -3,6 +3,7 @@ import 'package:bapp_api_client/bapp_api_client.dart';
 /// Narrow surface the renderer depends on. Implemented by [BappMobileApi] in
 /// production and by fakes in tests, so the renderer never touches the network.
 abstract class MobileApi {
+  Future<Map<String, dynamic>> access();
   Future<Map<String, dynamic>> bootstrap(String project);
   Future<Map<String, dynamic>> listIntrospect(String contentType, String project);
   Future<Map<String, dynamic>> detailIntrospect(String contentType, String project);
@@ -18,6 +19,12 @@ abstract class MobileApi {
 class BappMobileApi implements MobileApi {
   BappMobileApi(this._client);
   final BappApiClient _client;
+
+  @override
+  Future<Map<String, dynamic>> access() async {
+    final res = await _client.runTask('mobile.access', const {});
+    return (res as Map).cast<String, dynamic>();
+  }
 
   @override
   Future<Map<String, dynamic>> bootstrap(String project) async {

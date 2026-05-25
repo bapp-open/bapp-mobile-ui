@@ -15,6 +15,8 @@ class FakeApi implements MobileApi {
   String? lastCode;
   Map<String, dynamic>? lastPayload;
   @override
+  Future<Map<String, dynamic>> access() async => {'user': {}, 'memberships': []};
+  @override
   Future<Map<String, dynamic>> bootstrap(String p) async => {};
   @override
   Future<Map<String, dynamic>> listIntrospect(String c, String p) async => {};

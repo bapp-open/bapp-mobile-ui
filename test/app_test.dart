@@ -10,6 +10,18 @@ Map<String, dynamic> _f(String n) =>
 
 class FixtureApi implements MobileApi {
   @override
+  Future<Map<String, dynamic>> access() async => {
+        'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
+        'memberships': [
+          {
+            'tenant': {'id': 'tenant-1', 'name': 'ACME SRL'},
+            'apps': [
+              {'slug': 'vault', 'name': 'Vault', 'icon': 'fa-shield-keyhole', 'web_app': 'erp'}
+            ]
+          }
+        ]
+      };
+  @override
   Future<Map<String, dynamic>> bootstrap(String project) async =>
       _f('mobile.bootstrap.vault.json');
   @override

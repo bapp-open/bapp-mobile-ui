@@ -3,8 +3,10 @@ import 'package:bapp_auth/bapp_auth.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
 import 'package:bapp_mobile_ui/src/actions/action_runner.dart';
+import 'package:bapp_mobile_ui/src/app/selection_screens.dart';
 import 'package:bapp_mobile_ui/src/bootstrap/bootstrap_service.dart';
 import 'package:bapp_mobile_ui/src/config/bapp_mobile_config.dart';
+import 'package:bapp_mobile_ui/src/models/access.dart';
 import 'package:bapp_mobile_ui/src/models/manifest.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
@@ -12,9 +14,14 @@ import 'package:bapp_mobile_ui/src/nodes/builtin_nodes.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/cache/cache_store.dart';
 import 'package:bapp_mobile_ui/src/screens/screen_service.dart';
+import 'package:bapp_mobile_ui/src/screens/selection_store.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
 import 'package:bapp_mobile_ui/src/screens/detail_screen_view.dart';
 import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
+
+/// Returns true when [error] represents an HTTP 403 Forbidden response.
+/// BappApiClient throws `Exception('BappApiClient: METHOD path failed with 403')`.
+bool _isForbidden(Object error) => error.toString().contains(' 403');
 
 class BappMobileApp extends StatefulWidget {
   final BappMobileConfig config;
@@ -29,12 +36,25 @@ class _BappMobileAppState extends State<BappMobileApp> {
   late final NodeRegistry _nodes;
   late final TemplateRegistry _templates;
   final _navigatorKey = GlobalKey<NavigatorState>();
+
   MobileApi? _api;
+  BappAuth? _auth; // non-null only on the real auth path
   Future<BootstrapManifest>? _bootstrap;
   String? _error;
   int _navIndex = 0;
   int _refreshTick = 0;
   CacheStore? _cache;
+  SelectionStore? _selectionStore;
+
+  /// The resolved (mobileSlug, webApp, tenantId) after the picker.
+  ({String mobileSlug, String webApp, String tenantId})? _selection;
+
+  /// Access info returned by mobile.access — kept so the selection can be
+  /// validated / re-shown without hitting the network again.
+  AccessInfo? _access;
+
+  /// True while the async _init / _resolveSelection work is in flight.
+  bool _loading = true;
 
   @override
   void initState() {
@@ -50,41 +70,163 @@ class _BappMobileAppState extends State<BappMobileApp> {
     _init();
   }
 
+  // ---------------------------------------------------------------------------
+  // Initialisation
+  // ---------------------------------------------------------------------------
+
   Future<void> _init() async {
     try {
-      final api = widget.apiOverride ?? await _authenticate();
-      if (!mounted) return;
+      MobileApi api;
+      if (widget.apiOverride != null) {
+        api = widget.apiOverride!;
+      } else {
+        final auth = await _authenticate();
+        _auth = auth;
+        api = BappMobileApi(auth.apiClient);
+      }
+
       final cache = await _tryCreateCache();
+      final store = await SelectionStore.create(host: widget.config.host);
+
+      if (!mounted) return;
       setState(() {
         _api = api;
         _cache = cache;
-        _bootstrap =
-            BootstrapService(api: api, project: widget.config.project).load();
+        _selectionStore = store;
+        _loading = true;
       });
+
+      // Fetch access matrix.
+      final accessJson = await api.access();
+      final access = AccessInfo.fromJson(accessJson);
+
+      if (!mounted) return;
+      setState(() => _access = access);
+
+      await _resolveSelection(access);
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (mounted) setState(() { _error = '$e'; _loading = false; });
     }
   }
 
-  /// Best-effort cache. Returns null when the platform plugin is unavailable
-  /// (e.g. in widget tests without a SharedPreferences mock) — the app then
-  /// runs uncached rather than failing to boot.
+  /// Resolves which (app, tenant) to boot, using persisted selection or the
+  /// picker UI. When a selection is made [_bootSelection] is called.
+  Future<void> _resolveSelection(AccessInfo access) async {
+    // 1. Try persisted selection first.
+    if (_selectionStore != null) {
+      final saved = await _selectionStore!.read();
+      if (saved != null) {
+        final valid = access.pairs.any(
+          (p) => p.app.slug == saved.mobileSlug && p.tenant.id == saved.tenantId,
+        );
+        if (valid) {
+          final app = access.pairs
+              .firstWhere((p) => p.app.slug == saved.mobileSlug)
+              .app;
+          final tenant = access.pairs
+              .firstWhere((p) =>
+                  p.app.slug == saved.mobileSlug &&
+                  p.tenant.id == saved.tenantId)
+              .tenant;
+          await _bootSelection(app, tenant);
+          return;
+        }
+      }
+    }
+
+    // 2. Pinned project path.
+    final pinned = widget.config.project;
+    if (pinned != null) {
+      final matching = access.pairs.where((p) => p.app.slug == pinned).toList();
+      if (matching.isEmpty) {
+        if (mounted) setState(() { _loading = false; });
+        return; // NoAccessView shown via _buildSelectionWidget
+      }
+      if (matching.length == 1) {
+        await _bootSelection(matching.first.app, matching.first.tenant);
+        return;
+      }
+      // Multiple tenants for the pinned app — show TenantPicker.
+      if (mounted) setState(() => _loading = false);
+      return; // build() will show TenantPicker
+    }
+
+    // 3. App-first flow.
+    final appsFirst = access.appsFirst();
+    if (appsFirst.isEmpty) {
+      if (mounted) setState(() => _loading = false);
+      return; // NoAccessView
+    }
+    if (appsFirst.length == 1 && appsFirst.first.tenants.length == 1) {
+      await _bootSelection(appsFirst.first.app, appsFirst.first.tenants.first);
+      return;
+    }
+    // Show picker.
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _bootSelection(AccessApp app, AccessTenant tenant) async {
+    // Apply headers (real auth path only — apiOverride path skips this).
+    if (_auth != null) {
+      _auth!.setApp(app.webApp);
+      _auth!.setTenant(tenant.id);
+    }
+
+    final sel = (
+      mobileSlug: app.slug,
+      webApp: app.webApp,
+      tenantId: tenant.id,
+    );
+    await _selectionStore?.save(
+        mobileSlug: app.slug, webApp: app.webApp, tenantId: tenant.id);
+
+    if (!mounted) return;
+    setState(() {
+      _selection = sel;
+      _loading = true;
+      _bootstrap = BootstrapService(api: _api!, project: app.slug).load();
+      _loading = false;
+    });
+  }
+
+  // Called when a 403 is detected during boot/screen load.
+  Future<void> _resetSelection() async {
+    await _selectionStore?.clear();
+    if (!mounted) return;
+    setState(() {
+      _selection = null;
+      _bootstrap = null;
+      _loading = true;
+    });
+    // Re-run selection with the existing access info (avoid another network call).
+    if (_access != null) {
+      await _resolveSelection(_access!);
+    } else {
+      await _init();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
   Future<CacheStore?> _tryCreateCache() async {
     try {
+      final slug = widget.config.project ?? 'app';
       return await CacheStore.create(
-          namespace: '${widget.config.host}:${widget.config.project}');
+          namespace: '${widget.config.host}:$slug');
     } catch (_) {
       return null;
     }
   }
 
-  Future<MobileApi> _authenticate() async {
-    // Real Keycloak path (not exercised in widget tests).
+  Future<BappAuth> _authenticate() async {
+    final projectOrDefault = widget.config.project ?? 'account';
     final auth = BappAuth(
       config: BappAuthConfig(
         host: widget.config.host,
-        app: widget.config.project,
-        clientId: widget.config.clientId ?? widget.config.project,
+        app: projectOrDefault,
+        clientId: widget.config.clientId ?? projectOrDefault,
         ssoAutoLogin: true,
       ),
     );
@@ -92,8 +234,8 @@ class _BappMobileAppState extends State<BappMobileApp> {
     if (!auth.isAuthenticated) {
       await auth.loginWithSSO();
     }
-    auth.setApp(widget.config.project);
-    return BappMobileApi(auth.apiClient);
+    // Do NOT call setApp here — we set it after selection (with the web_app).
+    return auth;
   }
 
   Color _primary(BootstrapManifest m) {
@@ -103,34 +245,119 @@ class _BappMobileAppState extends State<BappMobileApp> {
     return value == null ? const Color(0xFF1E2A3C) : Color(value);
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
-      home: _error != null
-          ? Scaffold(body: Center(child: Text('Error: $_error')))
-          : _api == null || _bootstrap == null
-              ? const Scaffold(
-                  body: Center(child: CircularProgressIndicator()))
-              : FutureBuilder<BootstrapManifest>(
-                  future: _bootstrap,
-                  builder: (context, snap) {
-                    if (snap.hasError) {
-                      return Scaffold(
-                          body: Center(
-                              child: Text('Error: ${snap.error}')));
-                    }
-                    if (!snap.hasData) {
-                      return const Scaffold(
-                          body:
-                              Center(child: CircularProgressIndicator()));
-                    }
-                    return _shell(context, snap.data!);
-                  },
-                ),
+      home: _buildHome(),
     );
   }
+
+  Widget _buildHome() {
+    if (_error != null) {
+      return Scaffold(body: Center(child: Text('Error: $_error')));
+    }
+    if (_loading || _api == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    // Selection not yet resolved — show picker or no-access.
+    if (_selection == null) {
+      return _buildSelectionWidget();
+    }
+    // Selection resolved — show bootstrap shell.
+    if (_bootstrap == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return FutureBuilder<BootstrapManifest>(
+      future: _bootstrap,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          if (_isForbidden(snap.error!)) {
+            // Schedule reset after build.
+            WidgetsBinding.instance.addPostFrameCallback((_) => _resetSelection());
+            return const Scaffold(
+                body: Center(child: CircularProgressIndicator()));
+          }
+          return Scaffold(
+              body: Center(child: Text('Error: ${snap.error}')));
+        }
+        if (!snap.hasData) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+        return _shell(context, snap.data!);
+      },
+    );
+  }
+
+  /// Builds the appropriate selection widget based on the access matrix state.
+  Widget _buildSelectionWidget() {
+    final access = _access;
+    if (access == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final pinned = widget.config.project;
+    if (pinned != null) {
+      final matching = access.pairs.where((p) => p.app.slug == pinned).toList();
+      if (matching.isEmpty) return const NoAccessView();
+      // Multiple tenants for pinned app.
+      final app = matching.first.app;
+      final tenants = matching.map((p) => p.tenant).toList();
+      return TenantPicker(
+        app: app,
+        tenants: tenants,
+        onPick: (tenant) => _bootSelection(app, tenant),
+      );
+    }
+
+    final appsFirst = access.appsFirst();
+    if (appsFirst.isEmpty) return const NoAccessView();
+
+    return AppPicker(
+      apps: appsFirst,
+      onPick: (app) {
+        final entry = appsFirst.firstWhere((e) => e.app.slug == app.slug);
+        if (entry.tenants.length == 1) {
+          _bootSelection(app, entry.tenants.first);
+        } else {
+          // Show TenantPicker inline by updating state.
+          setState(() => _access = AccessInfo(
+                user: access.user,
+                memberships: [
+                  Membership(
+                    tenant: entry.tenants.first, // placeholder, replaced below
+                    apps: [app],
+                  ),
+                ],
+              ));
+          // Push a new "pinned to this app" state by temporarily surfacing
+          // TenantPicker via a Navigator push on the MaterialApp navigator.
+          _navigatorKey.currentState?.push(MaterialPageRoute(
+            builder: (_) => TenantPicker(
+              app: app,
+              tenants: entry.tenants,
+              onPick: (tenant) {
+                _navigatorKey.currentState?.pop();
+                _bootSelection(app, tenant);
+              },
+            ),
+          ));
+          // Restore original access so the back-stack pops correctly.
+          setState(() => _access = access);
+        }
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shell / screens
+  // ---------------------------------------------------------------------------
 
   Widget _shell(BuildContext context, BootstrapManifest m) {
     final nav = m.navigation;
@@ -168,15 +395,21 @@ class _BappMobileAppState extends State<BappMobileApp> {
       orElse: () =>
           ScreenRef(key: item.screen ?? '', template: 'list', version: '1'),
     );
+    final mobileSlug = _selection!.mobileSlug;
     return FutureBuilder<ScreenDef>(
       key: ValueKey('${ref.key}:$_refreshTick'),
       future: ScreenService(
         api: _api!,
-        project: widget.config.project,
+        project: mobileSlug,
         cache: _cache,
       ).load(ref),
       builder: (context, snap) {
         if (snap.hasError) {
+          if (_isForbidden(snap.error!)) {
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _resetSelection());
+            return const Center(child: CircularProgressIndicator());
+          }
           return Center(child: Text('Error: ${snap.error}'));
         }
         if (!snap.hasData) {
@@ -215,7 +448,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
       builder: (_) => DetailScreenView(
         api: _api!,
         nodes: _nodes,
-        project: widget.config.project,
+        project: _selection!.mobileSlug,
         screenKey: screenKey,
         recordId: recordId!,
       ),
@@ -235,12 +468,6 @@ class _BappMobileAppState extends State<BappMobileApp> {
           content: Text(
               result.message ?? (result.success ? 'Done' : 'Failed'))),
     );
-    // Refresh after a successful action. Bumping _refreshTick re-runs the
-    // screen FutureBuilder: the screen *definition* is served from the
-    // version-keyed cache (no network), while the list template re-fetches its
-    // records live. Record data is never cached, so `invalidates` is covered by
-    // this live re-fetch; eviction of cached record data lands when an offline
-    // data cache is added.
     if (result.success) {
       setState(() => _refreshTick++);
     }
