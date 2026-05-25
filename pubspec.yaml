@@ -1,7 +1,12 @@
 name: bapp_mobile_ui
 description: Server-driven mobile UI renderer for the bapp_framework backend.
 version: 0.1.0
-publish_to: none
+homepage: https://www.bapp.ro
+repository: https://github.com/bapp-open/bapp-mobile-ui
+topics:
+  - ui
+  - flutter
+  - server-driven-ui
 environment:
   sdk: '>=3.3.0 <4.0.0'
   flutter: '>=3.22.0'
