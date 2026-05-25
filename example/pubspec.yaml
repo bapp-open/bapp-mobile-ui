@@ -1,0 +1,16 @@
+name: bapp_mobile_ui_example
+description: Example app demonstrating bapp_mobile_ui (host + project only).
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.22.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  bapp_mobile_ui:
+    path: ../
+dev_dependencies:
+  flutter_lints: ^4.0.0
+flutter:
+  uses-material-design: true

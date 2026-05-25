@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "app": {
+    "slug": "vault",
+    "name": "Vault",
+    "icon": "fa-shield-keyhole",
+    "web_app": "erp",
+    "theme": {
+      "primary": "#1E2A3C",
+      "mode": "light"
+    }
+  },
+  "navigation": [
+    {
+      "key": "passwords",
+      "label": "Passwords",
+      "icon": "fa-key",
+      "screen": "company_passwords.passwordentry:list"
+    }
+  ],
+  "screens": [
+    {
+      "key": "company_passwords.passwordentry:list",
+      "template": "list",
+      "version": "1"
+    }
+  ],
+  "capabilities": {}
+}

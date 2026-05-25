@@ -91,3 +91,39 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+## Usage
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:bapp_mobile_ui/bapp_mobile_ui.dart';
+
+void main() => runApp(const BappMobileApp(
+      config: BappMobileConfig(
+        host: 'https://your-tenant.bapp.ro/api',
+        project: 'vault', // your mobile app slug
+      ),
+    ));
+```
+
+The app boots from only a **host** + **project**: it logs in via `bapp_auth`
+(Keycloak), fetches the mobile UI contract from the backend
+(`mobile.bootstrap` / `mobile.listintrospect`), and renders the server-defined
+screens. No screen-specific Dart is required.
+
+### Extending
+
+Register custom node-kinds or templates without forking:
+
+```dart
+BappMobileApp(
+  config: BappMobileConfig(
+    host: '...', project: '...',
+    nodes: {'kanban_card': (ctx, node) => MyKanbanCard(node)},
+    templates: {'kanban': (ctx, screen, api, nodes) => MyKanbanScreen(screen)},
+  ),
+);
+```
+
+See `example/` for a runnable host. Running it requires a live bapp_framework
+backend with a matching mobile app (e.g. the `vault` sample).
