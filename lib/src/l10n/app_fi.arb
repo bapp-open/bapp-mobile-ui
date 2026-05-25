@@ -1,0 +1,20 @@
+{
+  "@@locale": "fi",
+  "chooseTenant": "Valitse yritys",
+  "chooseApp": "Valitse sovellus",
+  "noMobileApps": "Tilillesi ei ole saatavilla mobiilisovelluksia",
+  "noScreens": "Ei näyttöjä",
+  "noItems": "Ei kohteita",
+  "save": "Tallenna",
+  "done": "Valmis",
+  "failed": "Epäonnistui",
+  "errorWithMessage": "Virhe: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC ei saatavilla",
+  "online": "Verkossa",
+  "offline": "Yhteydettömässä tilassa"
+}

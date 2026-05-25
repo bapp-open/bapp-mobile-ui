@@ -1,0 +1,20 @@
+{
+  "@@locale": "ro",
+  "chooseTenant": "Alege firma",
+  "chooseApp": "Alege aplicația",
+  "noMobileApps": "Nicio aplicație mobilă disponibilă pentru contul tău",
+  "noScreens": "Niciun ecran",
+  "noItems": "Niciun element",
+  "save": "Salvează",
+  "done": "Gata",
+  "failed": "Eșuat",
+  "errorWithMessage": "Eroare: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC indisponibil",
+  "online": "Conectat",
+  "offline": "Deconectat"
+}

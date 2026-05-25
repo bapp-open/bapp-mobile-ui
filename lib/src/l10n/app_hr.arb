@@ -1,0 +1,20 @@
+{
+  "@@locale": "hr",
+  "chooseTenant": "Odaberi tvrtku",
+  "chooseApp": "Odaberi aplikaciju",
+  "noMobileApps": "Nema dostupnih mobilnih aplikacija za vaš račun",
+  "noScreens": "Nema zaslona",
+  "noItems": "Nema stavki",
+  "save": "Spremi",
+  "done": "Gotovo",
+  "failed": "Neuspješno",
+  "errorWithMessage": "Pogreška: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nedostupan",
+  "online": "Na mreži",
+  "offline": "Izvan mreže"
+}

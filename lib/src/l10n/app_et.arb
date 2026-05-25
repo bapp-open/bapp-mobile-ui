@@ -1,0 +1,20 @@
+{
+  "@@locale": "et",
+  "chooseTenant": "Vali ettevõte",
+  "chooseApp": "Vali rakendus",
+  "noMobileApps": "Teie kontole pole mobiilirakendusi saadaval",
+  "noScreens": "Ekraane pole",
+  "noItems": "Üksusi pole",
+  "save": "Salvesta",
+  "done": "Valmis",
+  "failed": "Ebaõnnestus",
+  "errorWithMessage": "Viga: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC pole saadaval",
+  "online": "Võrgus",
+  "offline": "Võrguühenduseta"
+}

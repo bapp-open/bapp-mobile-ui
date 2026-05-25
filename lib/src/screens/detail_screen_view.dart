@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
 import 'package:bapp_mobile_ui/src/actions/action_runner.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
@@ -52,10 +53,11 @@ class _DetailScreenViewState extends State<DetailScreenView> {
     final result =
         await ActionRunner(widget.api).run(code, {'pk': widget.recordId});
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content:
-              Text(result.message ?? (result.success ? 'Done' : 'Failed'))),
+          content: Text(
+              result.message ?? (result.success ? l10n.done : l10n.failed))),
     );
   }
 
@@ -107,7 +109,9 @@ class _DetailScreenViewState extends State<DetailScreenView> {
       builder: (context, snap) {
         if (snap.hasError) {
           return Scaffold(
-              body: Center(child: Text('Error: ${snap.error}')));
+              body: Center(
+                  child: Text(AppLocalizations.of(context)
+                      .errorWithMessage('${snap.error}'))));
         }
         if (!snap.hasData) {
           return const Scaffold(

@@ -1,0 +1,20 @@
+{
+  "@@locale": "sv",
+  "chooseTenant": "Välj företag",
+  "chooseApp": "Välj app",
+  "noMobileApps": "Inga mobilappar tillgängliga för ditt konto",
+  "noScreens": "Inga skärmar",
+  "noItems": "Inga objekt",
+  "save": "Spara",
+  "done": "Klar",
+  "failed": "Misslyckades",
+  "errorWithMessage": "Fel: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC ej tillgänglig",
+  "online": "Online",
+  "offline": "Offline"
+}

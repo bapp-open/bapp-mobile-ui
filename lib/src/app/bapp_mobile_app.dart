@@ -6,6 +6,7 @@ import 'package:bapp_mobile_ui/src/actions/action_runner.dart';
 import 'package:bapp_mobile_ui/src/app/selection_screens.dart';
 import 'package:bapp_mobile_ui/src/bootstrap/bootstrap_service.dart';
 import 'package:bapp_mobile_ui/src/config/bapp_mobile_config.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/access.dart';
 import 'package:bapp_mobile_ui/src/models/manifest.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
@@ -264,13 +265,22 @@ class _BappMobileAppState extends State<BappMobileApp> {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: widget.config.locale,
       home: _buildHome(),
     );
   }
 
   Widget _buildHome() {
     if (_error != null) {
-      return Scaffold(body: Center(child: Text('Error: $_error')));
+      return Scaffold(
+        body: Builder(
+          builder: (ctx) => Center(
+            child: Text(AppLocalizations.of(ctx).errorWithMessage(_error!)),
+          ),
+        ),
+      );
     }
     if (_loading || _api == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -294,7 +304,10 @@ class _BappMobileAppState extends State<BappMobileApp> {
                 body: Center(child: CircularProgressIndicator()));
           }
           return Scaffold(
-              body: Center(child: Text('Error: ${snap.error}')));
+              body: Center(
+                child: Text(AppLocalizations.of(context)
+                    .errorWithMessage('${snap.error}')),
+              ));
         }
         if (!snap.hasData) {
           return const Scaffold(
@@ -376,7 +389,9 @@ class _BappMobileAppState extends State<BappMobileApp> {
   Widget _shell(BuildContext context, BootstrapManifest m) {
     final nav = m.navigation;
     if (nav.isEmpty) {
-      return const Scaffold(body: Center(child: Text('No screens')));
+      return Scaffold(
+          body: Center(
+              child: Text(AppLocalizations.of(context).noScreens)));
     }
     final index = _navIndex.clamp(0, nav.length - 1);
     final current = nav[index];
@@ -427,7 +442,9 @@ class _BappMobileAppState extends State<BappMobileApp> {
                 .addPostFrameCallback((_) => _resetSelection());
             return const Center(child: CircularProgressIndicator());
           }
-          return Center(child: Text('Error: ${snap.error}'));
+          return Center(
+              child: Text(AppLocalizations.of(context)
+                  .errorWithMessage('${snap.error}')));
         }
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -504,10 +521,11 @@ class _BappMobileAppState extends State<BappMobileApp> {
     if (extra != null) payload.addAll(extra);
     final result = await ActionRunner(_api!).run(code, payload);
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text(
-              result.message ?? (result.success ? 'Done' : 'Failed'))),
+              result.message ?? (result.success ? l10n.done : l10n.failed))),
     );
     if (result.success) {
       setState(() => _refreshTick++);

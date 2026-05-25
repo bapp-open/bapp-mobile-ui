@@ -1,0 +1,20 @@
+{
+  "@@locale": "el",
+  "chooseTenant": "Επιλογή εταιρείας",
+  "chooseApp": "Επιλογή εφαρμογής",
+  "noMobileApps": "Δεν υπάρχουν διαθέσιμες εφαρμογές για τον λογαριασμό σας",
+  "noScreens": "Δεν υπάρχουν οθόνες",
+  "noItems": "Δεν υπάρχουν στοιχεία",
+  "save": "Αποθήκευση",
+  "done": "Τέλος",
+  "failed": "Αποτυχία",
+  "errorWithMessage": "Σφάλμα: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC μη διαθέσιμο",
+  "online": "Συνδεδεμένος",
+  "offline": "Αποσυνδεδεμένος"
+}

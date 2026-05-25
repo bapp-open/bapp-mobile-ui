@@ -1,0 +1,20 @@
+{
+  "@@locale": "sk",
+  "chooseTenant": "Vyberte firmu",
+  "chooseApp": "Vyberte aplikáciu",
+  "noMobileApps": "Pre váš účet nie sú k dispozícii žiadne mobilné aplikácie",
+  "noScreens": "Žiadne obrazovky",
+  "noItems": "Žiadne položky",
+  "save": "Uložiť",
+  "done": "Hotovo",
+  "failed": "Zlyhalo",
+  "errorWithMessage": "Chyba: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nie je dostupné",
+  "online": "Online",
+  "offline": "Offline"
+}

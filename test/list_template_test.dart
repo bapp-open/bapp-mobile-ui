@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
@@ -63,6 +64,8 @@ void main() {
     final screen = _listScreen();
 
     await t.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: Builder(
           builder: (c) => templates.build(c, screen, api, nodes),
@@ -85,6 +88,8 @@ void main() {
     final templates = TemplateRegistry();
     registerBuiltinTemplates(templates);
     await t.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: Builder(
           builder: (c) =>

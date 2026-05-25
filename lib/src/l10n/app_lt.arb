@@ -1,0 +1,20 @@
+{
+  "@@locale": "lt",
+  "chooseTenant": "Pasirinkite įmonę",
+  "chooseApp": "Pasirinkite programėlę",
+  "noMobileApps": "Jūsų paskyroje nėra mobiliųjų programėlių",
+  "noScreens": "Nėra ekranų",
+  "noItems": "Nėra elementų",
+  "save": "Išsaugoti",
+  "done": "Atlikta",
+  "failed": "Nepavyko",
+  "errorWithMessage": "Klaida: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nepasiekiamas",
+  "online": "Prisijungęs",
+  "offline": "Atsijungęs"
+}

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/render/project_scope.dart';
@@ -38,6 +39,8 @@ Widget _host(
   BappNavigateCallback? onNavigate,
 }) {
   return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: ProjectScope(
         project: project,

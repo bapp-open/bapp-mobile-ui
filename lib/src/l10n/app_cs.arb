@@ -1,0 +1,20 @@
+{
+  "@@locale": "cs",
+  "chooseTenant": "Vyberte firmu",
+  "chooseApp": "Vyberte aplikaci",
+  "noMobileApps": "Pro váš účet nejsou k dispozici žádné mobilní aplikace",
+  "noScreens": "Žádné obrazovky",
+  "noItems": "Žádné položky",
+  "save": "Uložit",
+  "done": "Hotovo",
+  "failed": "Nezdařilo se",
+  "errorWithMessage": "Chyba: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC není dostupné",
+  "online": "Online",
+  "offline": "Offline"
+}

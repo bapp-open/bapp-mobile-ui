@@ -1,0 +1,20 @@
+{
+  "@@locale": "hu",
+  "chooseTenant": "Vállalat kiválasztása",
+  "chooseApp": "Alkalmazás kiválasztása",
+  "noMobileApps": "Nincs elérhető mobilalkalmazás a fiókjához",
+  "noScreens": "Nincsenek képernyők",
+  "noItems": "Nincsenek elemek",
+  "save": "Mentés",
+  "done": "Kész",
+  "failed": "Sikertelen",
+  "errorWithMessage": "Hiba: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nem elérhető",
+  "online": "Online",
+  "offline": "Offline"
+}

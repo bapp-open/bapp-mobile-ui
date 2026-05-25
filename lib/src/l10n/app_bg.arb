@@ -1,0 +1,20 @@
+{
+  "@@locale": "bg",
+  "chooseTenant": "Избери фирма",
+  "chooseApp": "Избери приложение",
+  "noMobileApps": "Няма налични мобилни приложения за вашия акаунт",
+  "noScreens": "Няма екрани",
+  "noItems": "Няма елементи",
+  "save": "Запази",
+  "done": "Готово",
+  "failed": "Неуспешно",
+  "errorWithMessage": "Грешка: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC недостъпен",
+  "online": "Онлайн",
+  "offline": "Офлайн"
+}

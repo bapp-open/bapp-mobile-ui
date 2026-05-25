@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "chooseTenant": "Choose tenant",
+  "chooseApp": "Choose app",
+  "noMobileApps": "No mobile apps available for your account",
+  "noScreens": "No screens",
+  "noItems": "No items",
+  "save": "Save",
+  "done": "Done",
+  "failed": "Failed",
+  "errorWithMessage": "Error: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC unavailable",
+  "online": "Online",
+  "offline": "Offline"
+}

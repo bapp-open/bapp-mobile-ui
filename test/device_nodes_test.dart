@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/render/record_scope.dart';
@@ -19,7 +20,11 @@ NodeRegistry _reg() {
   return r;
 }
 
+/// Wraps [child] in a MaterialApp that includes the AppLocalizations delegates
+/// so that device nodes (connectivity, nfc) can call AppLocalizations.of().
 Widget _host(Widget child, {Map<String, dynamic>? record}) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: RecordScope(record: record, child: child)),
     );
 

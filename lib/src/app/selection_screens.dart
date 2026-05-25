@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/access.dart';
 
 /// A simple list picker that lets the user choose a tenant.
@@ -11,7 +12,7 @@ class TenantPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose tenant')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).chooseTenant)),
       body: ListView.builder(
         itemCount: tenants.length,
         itemBuilder: (context, i) {
@@ -36,7 +37,7 @@ class AppPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose app')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).chooseApp)),
       body: ListView.builder(
         itemCount: apps.length,
         itemBuilder: (context, i) {
@@ -57,9 +58,9 @@ class NoAccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
-        child: Text('No mobile apps available for your account'),
+        child: Text(AppLocalizations.of(context).noMobileApps),
       ),
     );
   }

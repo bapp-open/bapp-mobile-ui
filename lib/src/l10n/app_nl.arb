@@ -1,0 +1,20 @@
+{
+  "@@locale": "nl",
+  "chooseTenant": "Kies bedrijf",
+  "chooseApp": "Kies app",
+  "noMobileApps": "Geen mobiele apps beschikbaar voor uw account",
+  "noScreens": "Geen schermen",
+  "noItems": "Geen items",
+  "save": "Opslaan",
+  "done": "Klaar",
+  "failed": "Mislukt",
+  "errorWithMessage": "Fout: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC niet beschikbaar",
+  "online": "Online",
+  "offline": "Offline"
+}

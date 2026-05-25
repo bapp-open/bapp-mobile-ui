@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/actions/action_runner.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/render/screen_renderer.dart';
@@ -82,10 +83,11 @@ class _FormTemplateState extends State<FormTemplate> {
     try {
       final result = await ActionRunner(widget.api).run(code, payload);
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message ??
-              (result.success ? 'Saved' : 'Failed')),
+              (result.success ? l10n.done : l10n.failed)),
         ),
       );
     } finally {
@@ -117,7 +119,7 @@ class _FormTemplateState extends State<FormTemplate> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save'),
+                  : Text(AppLocalizations.of(context).save),
             ),
           ],
         ),

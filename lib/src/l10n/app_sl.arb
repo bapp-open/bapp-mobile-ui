@@ -1,0 +1,20 @@
+{
+  "@@locale": "sl",
+  "chooseTenant": "Izberi podjetje",
+  "chooseApp": "Izberi aplikacijo",
+  "noMobileApps": "Za vaš račun ni na voljo nobenih mobilnih aplikacij",
+  "noScreens": "Ni zaslonov",
+  "noItems": "Ni elementov",
+  "save": "Shrani",
+  "done": "Končano",
+  "failed": "Neuspešno",
+  "errorWithMessage": "Napaka: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC ni na voljo",
+  "online": "V omrežju",
+  "offline": "Brez povezave"
+}

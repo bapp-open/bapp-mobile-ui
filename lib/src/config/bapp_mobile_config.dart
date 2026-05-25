@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
 
@@ -9,11 +10,15 @@ class BappMobileConfig {
   final String? clientId; // Keycloak client id; defaults to project
   final Map<String, NodeBuilder>? nodes; // custom node-kinds
   final Map<String, TemplateBuilder>? templates; // custom templates
+  /// Optional locale override — forces the SDK's chrome strings to this
+  /// language instead of following the device locale.
+  final Locale? locale;
   const BappMobileConfig({
     required this.host,
     this.project,
     this.clientId,
     this.nodes,
     this.templates,
+    this.locale,
   });
 }

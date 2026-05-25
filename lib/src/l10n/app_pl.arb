@@ -1,0 +1,20 @@
+{
+  "@@locale": "pl",
+  "chooseTenant": "Wybierz firmę",
+  "chooseApp": "Wybierz aplikację",
+  "noMobileApps": "Brak dostępnych aplikacji mobilnych dla twojego konta",
+  "noScreens": "Brak ekranów",
+  "noItems": "Brak elementów",
+  "save": "Zapisz",
+  "done": "Gotowe",
+  "failed": "Niepowodzenie",
+  "errorWithMessage": "Błąd: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC niedostępny",
+  "online": "Online",
+  "offline": "Offline"
+}

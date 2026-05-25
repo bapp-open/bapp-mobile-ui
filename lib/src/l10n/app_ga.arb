@@ -1,0 +1,20 @@
+{
+  "@@locale": "ga",
+  "chooseTenant": "Roghnaigh tionónta",
+  "chooseApp": "Roghnaigh aip",
+  "noMobileApps": "Níl aip soghluaiste ar fáil do do chuntas",
+  "noScreens": "Níl scáileáin ann",
+  "noItems": "Níl míranna ann",
+  "save": "Sábháil",
+  "done": "Déanta",
+  "failed": "Theip air",
+  "errorWithMessage": "Earráid: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nach bhfuil ar fáil",
+  "online": "Ar líne",
+  "offline": "As líne"
+}

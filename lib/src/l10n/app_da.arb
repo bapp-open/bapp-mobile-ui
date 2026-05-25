@@ -1,0 +1,20 @@
+{
+  "@@locale": "da",
+  "chooseTenant": "Vælg virksomhed",
+  "chooseApp": "Vælg app",
+  "noMobileApps": "Ingen mobilapps tilgængelige for din konto",
+  "noScreens": "Ingen skærme",
+  "noItems": "Ingen elementer",
+  "save": "Gem",
+  "done": "Færdig",
+  "failed": "Mislykkedes",
+  "errorWithMessage": "Fejl: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC ikke tilgængelig",
+  "online": "Online",
+  "offline": "Offline"
+}

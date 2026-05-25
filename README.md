@@ -92,6 +92,27 @@ For open source projects, say how it is licensed.
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
 
+## Localisation
+
+The SDK ships with built-in UI strings (pickers, empty/error states, Save, NFC
+status, connectivity defaults) localised into all 24 EU official languages:
+
+`bg cs da de el en es et fi fr ga hr hu it lt lv mt nl pl pt ro sk sl sv`
+
+Romanian (`ro`) and English (`en`) are the authoritative translations.
+The remaining 22 languages are machine-provided — native-speaker corrections
+are very welcome via merge request.
+
+Pass `locale` in `BappMobileConfig` to force a specific language regardless of
+the device locale (useful for testing):
+
+```dart
+BappMobileConfig(host: '…', project: '…', locale: Locale('ro'))
+```
+
+Server-defined labels (screen titles, field labels, action buttons) are
+translated separately on the backend and are not affected by this setting.
+
 ## Usage
 
 ```dart

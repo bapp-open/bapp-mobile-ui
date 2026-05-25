@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
@@ -49,11 +50,13 @@ class _ListTemplateState extends State<ListTemplate> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text('Error: ${snap.error}'));
+          return Center(
+              child: Text(AppLocalizations.of(context)
+                  .errorWithMessage('${snap.error}')));
         }
         final records = snap.data ?? const [];
         if (records.isEmpty) {
-          return const Center(child: Text('No items'));
+          return Center(child: Text(AppLocalizations.of(context).noItems));
         }
         if (itemNode == null) return const SizedBox.shrink();
         return ListView.builder(

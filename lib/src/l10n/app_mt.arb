@@ -1,0 +1,20 @@
+{
+  "@@locale": "mt",
+  "chooseTenant": "Agħżel kumpanija",
+  "chooseApp": "Agħżel applikazzjoni",
+  "noMobileApps": "L-ebda applikazzjonijiet mobbli disponibbli għall-kont tiegħek",
+  "noScreens": "L-ebda skrin",
+  "noItems": "L-ebda elementi",
+  "save": "Issejvja",
+  "done": "Lest",
+  "failed": "Falliet",
+  "errorWithMessage": "Żball: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC mhux disponibbli",
+  "online": "Online",
+  "offline": "Offline"
+}

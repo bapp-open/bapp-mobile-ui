@@ -1,0 +1,20 @@
+{
+  "@@locale": "lv",
+  "chooseTenant": "Izvēlēties uzņēmumu",
+  "chooseApp": "Izvēlēties lietotni",
+  "noMobileApps": "Jūsu kontam nav pieejamu mobilo lietotņu",
+  "noScreens": "Nav ekrānu",
+  "noItems": "Nav elementu",
+  "save": "Saglabāt",
+  "done": "Gatavs",
+  "failed": "Neizdevās",
+  "errorWithMessage": "Kļūda: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "nfcUnavailable": "NFC nav pieejams",
+  "online": "Tiešsaistē",
+  "offline": "Bezsaistē"
+}

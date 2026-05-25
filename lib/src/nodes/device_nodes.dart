@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
+import 'package:bapp_mobile_ui/src/l10n/app_localizations.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/form_scope.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
@@ -368,7 +369,8 @@ class _NfcButtonNode extends StatelessWidget {
     if (!context.mounted) return;
     if (avail != NfcAvailability.enabled) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NFC unavailable on this device')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).nfcUnavailable)),
       );
       return;
     }
@@ -627,10 +629,11 @@ class _ConnectivityNodeState extends State<_ConnectivityNode> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final onlineLabel =
-        (widget.node.props['online_label'] as String?) ?? 'Online';
+        (widget.node.props['online_label'] as String?) ?? l10n.online;
     final offlineLabel =
-        (widget.node.props['offline_label'] as String?) ?? 'Offline';
+        (widget.node.props['offline_label'] as String?) ?? l10n.offline;
 
     final online = _online;
     return Chip(
