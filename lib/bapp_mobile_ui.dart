@@ -1,7 +1,8 @@
-/// Public API for the bapp_mobile_ui package.
-///
-/// Server-driven UI renderer for the bapp_framework backend. Configured with a
-/// host + optional project slug; renders screens defined by the backend.
 library bapp_mobile_ui;
 
-// Exports are added by subsequent tasks (config, app, registries).
+export 'src/config/bapp_mobile_config.dart';
+export 'src/app/bapp_mobile_app.dart';
+export 'src/api/mobile_api.dart' show MobileApi, BappMobileApi;
+export 'src/render/node_registry.dart' show NodeRegistry, NodeBuilder;
+export 'src/templates/template_registry.dart' show TemplateRegistry, TemplateBuilder;
+export 'src/models/node.dart' show Node;
