@@ -1,0 +1,14 @@
+# Dart/Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+# Per-app build dirs
+example/.dart_tool/
+example/build/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
