@@ -15,6 +15,7 @@ Map<String, dynamic> _f(String n) =>
     jsonDecode(File('test/fixtures/$n').readAsStringSync())
         as Map<String, dynamic>;
 
+/// Single tenant, single app.
 Map<String, dynamic> _singleMembership() => {
       'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
       'memberships': [
@@ -32,6 +33,7 @@ Map<String, dynamic> _singleMembership() => {
       ]
     };
 
+/// Single tenant, two apps.
 Map<String, dynamic> _twoApps() => {
       'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
       'memberships': [
@@ -45,6 +47,7 @@ Map<String, dynamic> _twoApps() => {
       ]
     };
 
+/// Two tenants, each with the same single app.
 Map<String, dynamic> _twoTenants() => {
       'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
       'memberships': [
@@ -63,6 +66,7 @@ Map<String, dynamic> _twoTenants() => {
       ]
     };
 
+/// No memberships at all.
 Map<String, dynamic> _noApps() => {
       'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
       'memberships': <dynamic>[]
@@ -124,9 +128,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   // -------------------------------------------------------------------------
-  // 1. Single app + single tenant → boots straight to nav shell
+  // 1. Single tenant + single app → boots straight to nav shell (no pickers)
   // -------------------------------------------------------------------------
-  testWidgets('single app + single tenant boots straight to nav shell',
+  testWidgets('single tenant + single app boots straight to nav shell',
       (t) async {
     await t.pumpWidget(BappMobileApp(
       config: const BappMobileConfig(
@@ -149,27 +153,29 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 2. config.project null + two apps → AppPicker shown; tapping boots
+  // 2. Single tenant + 2 apps → AppPicker shown (no TenantPicker); tap boots
   // -------------------------------------------------------------------------
-  testWidgets('null project + two apps → AppPicker; tap boots chosen app',
+  testWidgets(
+      'single tenant + two apps → AppPicker shown (no TenantPicker); tap boots',
       (t) async {
     await t.pumpWidget(BappMobileApp(
-      // project intentionally null
+      // project intentionally null — full tenant-first flow
       config: const BappMobileConfig(host: 'https://example.test/api'),
       apiOverride: _FakeApi(accessResult: _twoApps()),
     ));
     await t.pumpAndSettle();
 
-    // Both app names visible in picker
+    // AppPicker shown, TenantPicker NOT shown (single tenant auto-selected)
+    expect(find.byType(AppPicker), findsOneWidget);
+    expect(find.byType(TenantPicker), findsNothing);
     expect(find.text('Vault'), findsOneWidget);
     expect(find.text('CRM'), findsOneWidget);
-    expect(find.byType(AppPicker), findsOneWidget);
 
-    // Tap "Vault" (single tenant → auto-selects, boots)
+    // Tap "Vault" → boots
     await t.tap(find.text('Vault'));
     await t.pumpAndSettle();
 
-    // Should now be on the nav shell; tap Passwords bottom-nav to see list
+    // Should now be on the nav shell
     await t.tap(find.descendant(
       of: find.byType(BottomNavigationBar),
       matching: find.text('Passwords'),
@@ -179,9 +185,42 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 3. config.project set + app in two tenants → TenantPicker; tap boots
+  // 3. Two tenants → TenantPicker shown first; pick → boots (single app per tenant)
   // -------------------------------------------------------------------------
-  testWidgets('pinned project + two tenants → TenantPicker; tap boots',
+  testWidgets(
+      'two tenants → TenantPicker shown first; pick tenant → boots',
+      (t) async {
+    await t.pumpWidget(BappMobileApp(
+      // project null — full tenant-first flow
+      config: const BappMobileConfig(host: 'https://example.test/api'),
+      apiOverride: _FakeApi(accessResult: _twoTenants()),
+    ));
+    await t.pumpAndSettle();
+
+    // TenantPicker shown first
+    expect(find.byType(TenantPicker), findsOneWidget);
+    expect(find.text('ACME SRL'), findsOneWidget);
+    expect(find.text('Beta SRL'), findsOneWidget);
+
+    // Pick first tenant (has only 1 app → auto-boots)
+    await t.tap(find.text('ACME SRL'));
+    await t.pumpAndSettle();
+
+    // Nav shell loaded
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
+    expect(find.text('Gmail'), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // 4. config.project pinned + that app in 2 tenants → TenantPicker (only
+  //    those tenants) → pick → boots that app
+  // -------------------------------------------------------------------------
+  testWidgets(
+      'pinned project + two tenants → TenantPicker (filtered); tap boots',
       (t) async {
     await t.pumpWidget(BappMobileApp(
       config: const BappMobileConfig(
@@ -190,7 +229,7 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    // TenantPicker shown
+    // TenantPicker shown with both tenants that offer 'vault'
     expect(find.byType(TenantPicker), findsOneWidget);
     expect(find.text('ACME SRL'), findsOneWidget);
     expect(find.text('Beta SRL'), findsOneWidget);
@@ -199,7 +238,7 @@ void main() {
     await t.tap(find.text('ACME SRL'));
     await t.pumpAndSettle();
 
-    // Nav shell loaded; tap Passwords bottom-nav to see list content
+    // Nav shell loaded
     await t.tap(find.descendant(
       of: find.byType(BottomNavigationBar),
       matching: find.text('Passwords'),
@@ -209,7 +248,7 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 4. No matching membership → NoAccessView
+  // 5. No membership → NoAccessView
   // -------------------------------------------------------------------------
   testWidgets('no memberships → NoAccessView shown', (t) async {
     await t.pumpWidget(BappMobileApp(
@@ -225,7 +264,7 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // Unit tests for AccessInfo pivot helpers
+  // Unit tests for AccessInfo helpers
   // -------------------------------------------------------------------------
   group('AccessInfo.pairs', () {
     test('returns flat (app, tenant) pairs', () {
@@ -238,28 +277,32 @@ void main() {
     });
   });
 
-  group('AccessInfo.appsFirst', () {
-    test('groups by app slug and collects distinct tenants', () {
+  group('AccessInfo.tenantsFirst', () {
+    test('returns one entry per tenant with its apps', () {
       final info = AccessInfo.fromJson(_twoTenants());
-      final af = info.appsFirst();
-      expect(af.length, 1);
-      expect(af.first.app.slug, 'vault');
-      expect(af.first.tenants.length, 2);
+      final tf = info.tenantsFirst();
+      expect(tf.length, 2);
+      expect(tf.map((e) => e.tenant.id).toSet(),
+          containsAll(['tenant-1', 'tenant-2']));
+      for (final e in tf) {
+        expect(e.apps.length, 1);
+        expect(e.apps.first.slug, 'vault');
+      }
     });
 
-    test('two different apps each in one tenant → two entries', () {
+    test('single tenant with two apps → one entry with two apps', () {
       final info = AccessInfo.fromJson(_twoApps());
-      final af = info.appsFirst();
-      expect(af.length, 2);
-      expect(af.map((e) => e.app.slug).toSet(), containsAll(['vault', 'crm']));
-      for (final e in af) {
-        expect(e.tenants.length, 1);
-      }
+      final tf = info.tenantsFirst();
+      expect(tf.length, 1);
+      expect(tf.first.tenant.id, 'tenant-1');
+      expect(tf.first.apps.length, 2);
+      expect(tf.first.apps.map((a) => a.slug).toSet(),
+          containsAll(['vault', 'crm']));
     });
 
     test('empty memberships → empty list', () {
       final info = AccessInfo.fromJson(_noApps());
-      expect(info.appsFirst(), isEmpty);
+      expect(info.tenantsFirst(), isEmpty);
     });
   });
 }

@@ -111,26 +111,23 @@ class _BappMobileAppState extends State<BappMobileApp> {
     }
   }
 
-  /// Resolves which (app, tenant) to boot, using persisted selection or the
+  /// Resolves which (tenant, app) to boot, using persisted selection or the
   /// picker UI. When a selection is made [_bootSelection] is called.
   Future<void> _resolveSelection(AccessInfo access) async {
     // 1. Try persisted selection first.
     if (_selectionStore != null) {
       final saved = await _selectionStore!.read();
       if (saved != null) {
-        final valid = access.pairs.any(
-          (p) => p.app.slug == saved.mobileSlug && p.tenant.id == saved.tenantId,
-        );
+        // Valid if the tenant exists AND that tenant offers an app with the
+        // stored mobile slug.
+        final valid = access.memberships.any((m) =>
+            m.tenant.id == saved.tenantId &&
+            m.apps.any((a) => a.slug == saved.mobileSlug));
         if (valid) {
-          final app = access.pairs
-              .firstWhere((p) => p.app.slug == saved.mobileSlug)
-              .app;
-          final tenant = access.pairs
-              .firstWhere((p) =>
-                  p.app.slug == saved.mobileSlug &&
-                  p.tenant.id == saved.tenantId)
-              .tenant;
-          await _bootSelection(app, tenant);
+          final membership =
+              access.memberships.firstWhere((m) => m.tenant.id == saved.tenantId);
+          final app = membership.apps.firstWhere((a) => a.slug == saved.mobileSlug);
+          await _bootSelection(app, membership.tenant);
           return;
         }
       }
@@ -139,13 +136,17 @@ class _BappMobileAppState extends State<BappMobileApp> {
     // 2. Pinned project path.
     final pinned = widget.config.project;
     if (pinned != null) {
-      final matching = access.pairs.where((p) => p.app.slug == pinned).toList();
-      if (matching.isEmpty) {
-        if (mounted) setState(() { _loading = false; });
+      // Tenants that offer the pinned mobile slug.
+      final matchingTenants = access.memberships
+          .where((m) => m.apps.any((a) => a.slug == pinned))
+          .toList();
+      if (matchingTenants.isEmpty) {
+        if (mounted) setState(() => _loading = false);
         return; // NoAccessView shown via _buildSelectionWidget
       }
-      if (matching.length == 1) {
-        await _bootSelection(matching.first.app, matching.first.tenant);
+      if (matchingTenants.length == 1) {
+        final app = matchingTenants.first.apps.firstWhere((a) => a.slug == pinned);
+        await _bootSelection(app, matchingTenants.first.tenant);
         return;
       }
       // Multiple tenants for the pinned app — show TenantPicker.
@@ -153,17 +154,24 @@ class _BappMobileAppState extends State<BappMobileApp> {
       return; // build() will show TenantPicker
     }
 
-    // 3. App-first flow.
-    final appsFirst = access.appsFirst();
-    if (appsFirst.isEmpty) {
+    // 3. Tenant-first flow.
+    final tf = access.tenantsFirst();
+    if (tf.isEmpty) {
       if (mounted) setState(() => _loading = false);
       return; // NoAccessView
     }
-    if (appsFirst.length == 1 && appsFirst.first.tenants.length == 1) {
-      await _bootSelection(appsFirst.first.app, appsFirst.first.tenants.first);
+    if (tf.length == 1) {
+      final entry = tf.first;
+      if (entry.apps.length == 1) {
+        // Single tenant, single app — boot immediately.
+        await _bootSelection(entry.apps.first, entry.tenant);
+        return;
+      }
+      // Single tenant, multiple apps — skip TenantPicker, go straight to AppPicker.
+      if (mounted) setState(() => _loading = false);
       return;
     }
-    // Show picker.
+    // Multiple tenants — show TenantPicker.
     if (mounted) setState(() => _loading = false);
   }
 
@@ -298,6 +306,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
   }
 
   /// Builds the appropriate selection widget based on the access matrix state.
+  /// Tenant-first: TenantPicker → AppPicker (or auto) → boot.
   Widget _buildSelectionWidget() {
     final access = _access;
     if (access == null) {
@@ -306,52 +315,55 @@ class _BappMobileAppState extends State<BappMobileApp> {
 
     final pinned = widget.config.project;
     if (pinned != null) {
-      final matching = access.pairs.where((p) => p.app.slug == pinned).toList();
-      if (matching.isEmpty) return const NoAccessView();
-      // Multiple tenants for pinned app.
-      final app = matching.first.app;
-      final tenants = matching.map((p) => p.tenant).toList();
+      // Tenants that offer the pinned mobile slug.
+      final matchingMemberships = access.memberships
+          .where((m) => m.apps.any((a) => a.slug == pinned))
+          .toList();
+      if (matchingMemberships.isEmpty) return const NoAccessView();
+      // Multiple tenants — show TenantPicker (single tenant was auto-selected
+      // in _resolveSelection so we only reach here with >1).
+      final tenants = matchingMemberships.map((m) => m.tenant).toList();
       return TenantPicker(
-        app: app,
         tenants: tenants,
-        onPick: (tenant) => _bootSelection(app, tenant),
+        onPick: (tenant) {
+          final app = matchingMemberships
+              .firstWhere((m) => m.tenant.id == tenant.id)
+              .apps
+              .firstWhere((a) => a.slug == pinned);
+          _bootSelection(app, tenant);
+        },
       );
     }
 
-    final appsFirst = access.appsFirst();
-    if (appsFirst.isEmpty) return const NoAccessView();
+    final tf = access.tenantsFirst();
+    if (tf.isEmpty) return const NoAccessView();
 
-    return AppPicker(
-      apps: appsFirst,
-      onPick: (app) {
-        final entry = appsFirst.firstWhere((e) => e.app.slug == app.slug);
-        if (entry.tenants.length == 1) {
-          _bootSelection(app, entry.tenants.first);
+    // Single tenant with multiple apps — skip TenantPicker, show AppPicker.
+    if (tf.length == 1) {
+      return AppPicker(
+        apps: tf.first.apps,
+        onPick: (app) => _bootSelection(app, tf.first.tenant),
+      );
+    }
+
+    // Multiple tenants — show TenantPicker first.
+    return TenantPicker(
+      tenants: tf.map((e) => e.tenant).toList(),
+      onPick: (tenant) {
+        final entry = tf.firstWhere((e) => e.tenant.id == tenant.id);
+        if (entry.apps.length == 1) {
+          _bootSelection(entry.apps.first, tenant);
         } else {
-          // Show TenantPicker inline by updating state.
-          setState(() => _access = AccessInfo(
-                user: access.user,
-                memberships: [
-                  Membership(
-                    tenant: entry.tenants.first, // placeholder, replaced below
-                    apps: [app],
-                  ),
-                ],
-              ));
-          // Push a new "pinned to this app" state by temporarily surfacing
-          // TenantPicker via a Navigator push on the MaterialApp navigator.
+          // Push AppPicker for this tenant's apps.
           _navigatorKey.currentState?.push(MaterialPageRoute(
-            builder: (_) => TenantPicker(
-              app: app,
-              tenants: entry.tenants,
-              onPick: (tenant) {
+            builder: (_) => AppPicker(
+              apps: entry.apps,
+              onPick: (app) {
                 _navigatorKey.currentState?.pop();
                 _bootSelection(app, tenant);
               },
             ),
           ));
-          // Restore original access so the back-stack pops correctly.
-          setState(() => _access = access);
         }
       },
     );

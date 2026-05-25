@@ -70,4 +70,11 @@ class AccessInfo {
     }
     return bySlug.values.toList();
   }
+
+  /// Tenant-first view: each tenant with its list of apps, filtered to tenants
+  /// that have at least one app.  Mirrors the `memberships` structure directly.
+  List<({AccessTenant tenant, List<AccessApp> apps})> tenantsFirst() => [
+        for (final m in memberships)
+          if (m.apps.isNotEmpty) (tenant: m.tenant, apps: List.unmodifiable(m.apps)),
+      ];
 }
