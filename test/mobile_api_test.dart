@@ -39,7 +39,6 @@ void main() {
     // URL must reference the task code
     expect(captured.url.toString(), contains('mobile.bootstrap'));
     // Body must contain app=vault
-    expect(captured.body, contains('mobile.bootstrap') == isFalse ? anything : anything);
     final body = jsonDecode(captured.body) as Map;
     expect(body['app'], equals('vault'));
     // Method must be POST

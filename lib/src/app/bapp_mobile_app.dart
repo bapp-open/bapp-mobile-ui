@@ -80,7 +80,8 @@ class _BappMobileAppState extends State<BappMobileApp> {
   Color _primary(BootstrapManifest m) {
     final hex = m.app.theme?.primary.replaceAll('#', '');
     if (hex == null || hex.length != 6) return const Color(0xFF1E2A3C);
-    return Color(int.parse('FF$hex', radix: 16));
+    final value = int.tryParse('FF$hex', radix: 16);
+    return value == null ? const Color(0xFF1E2A3C) : Color(value);
   }
 
   @override
