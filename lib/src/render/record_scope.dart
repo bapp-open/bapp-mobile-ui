@@ -21,3 +21,19 @@ dynamic resolveFieldValue(String expr, Map<String, dynamic>? record) {
   final name = match != null ? match.group(1)!.trim() : expr.trim();
   return record[name];
 }
+
+/// Evaluate a node's `show_when` condition against the current record.
+/// Supported: {field, truthy: bool} and {field, equals: value}.
+bool evalShowWhen(Map<String, dynamic> condition, Map<String, dynamic>? record) {
+  final field = condition['field'] as String?;
+  if (field == null) return true;
+  final value = record?[field];
+  if (condition.containsKey('truthy')) {
+    final want = condition['truthy'] == true;
+    final isTruthy =
+        value != null && value != false && value != '' && value != 0;
+    return isTruthy == want;
+  }
+  if (condition.containsKey('equals')) return value == condition['equals'];
+  return true;
+}

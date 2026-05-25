@@ -3,12 +3,14 @@ class Node {
   final Map<String, dynamic> props;
   final List<Node> children;
   final Map<String, dynamic>? onTap;
+  final Map<String, dynamic>? showWhen;
 
   const Node({
     required this.kind,
     this.props = const {},
     this.children = const [],
     this.onTap,
+    this.showWhen,
   });
 
   factory Node.fromJson(Map<String, dynamic> j) => Node(
@@ -19,5 +21,6 @@ class Node {
             .map(Node.fromJson)
             .toList(),
         onTap: (j['on_tap'] as Map?)?.cast<String, dynamic>(),
+        showWhen: (j['show_when'] as Map?)?.cast<String, dynamic>(),
       );
 }

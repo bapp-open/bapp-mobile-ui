@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
+import 'package:bapp_mobile_ui/src/render/record_scope.dart';
 
 /// Builds a widget for a single node. Builders read the current record via
 /// `RecordScope.of(context)` and recurse via the registry for children.
@@ -14,6 +15,10 @@ class NodeRegistry {
   bool has(String kind) => _builders.containsKey(kind);
 
   Widget build(BuildContext context, Node node) {
+    if (node.showWhen != null &&
+        !evalShowWhen(node.showWhen!, RecordScope.of(context))) {
+      return const SizedBox.shrink();
+    }
     final builder = _builders[node.kind];
     if (builder == null) return UnsupportedNode(kind: node.kind);
     return builder(context, node);
