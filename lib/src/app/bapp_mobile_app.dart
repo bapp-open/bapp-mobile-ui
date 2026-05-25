@@ -10,6 +10,7 @@ import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/nodes/builtin_nodes.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
+import 'package:bapp_mobile_ui/src/cache/cache_store.dart';
 import 'package:bapp_mobile_ui/src/screens/screen_service.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
 
@@ -30,6 +31,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
   String? _error;
   int _navIndex = 0;
   int _refreshTick = 0;
+  CacheStore? _cache;
 
   @override
   void initState() {
@@ -49,13 +51,27 @@ class _BappMobileAppState extends State<BappMobileApp> {
     try {
       final api = widget.apiOverride ?? await _authenticate();
       if (!mounted) return;
+      final cache = await _tryCreateCache();
       setState(() {
         _api = api;
+        _cache = cache;
         _bootstrap =
             BootstrapService(api: api, project: widget.config.project).load();
       });
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
+    }
+  }
+
+  /// Best-effort cache. Returns null when the platform plugin is unavailable
+  /// (e.g. in widget tests without a SharedPreferences mock) — the app then
+  /// runs uncached rather than failing to boot.
+  Future<CacheStore?> _tryCreateCache() async {
+    try {
+      return await CacheStore.create(
+          namespace: '${widget.config.host}:${widget.config.project}');
+    } catch (_) {
+      return null;
     }
   }
 
@@ -150,8 +166,11 @@ class _BappMobileAppState extends State<BappMobileApp> {
     );
     return FutureBuilder<ScreenDef>(
       key: ValueKey('${ref.key}:$_refreshTick'),
-      future:
-          ScreenService(api: _api!, project: widget.config.project).load(ref),
+      future: ScreenService(
+        api: _api!,
+        project: widget.config.project,
+        cache: _cache,
+      ).load(ref),
       builder: (context, snap) {
         if (snap.hasError) {
           return Center(child: Text('Error: ${snap.error}'));
@@ -182,7 +201,13 @@ class _BappMobileAppState extends State<BappMobileApp> {
           content: Text(
               result.message ?? (result.success ? 'Done' : 'Failed'))),
     );
-    if (result.invalidates.isNotEmpty || result.success) {
+    // Refresh after a successful action. Bumping _refreshTick re-runs the
+    // screen FutureBuilder: the screen *definition* is served from the
+    // version-keyed cache (no network), while the list template re-fetches its
+    // records live. Record data is never cached, so `invalidates` is covered by
+    // this live re-fetch; eviction of cached record data lands when an offline
+    // data cache is added.
+    if (result.success) {
       setState(() => _refreshTick++);
     }
   }

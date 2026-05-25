@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bapp_mobile_ui/bapp_mobile_ui.dart';
 
 Map<String, dynamic> _f(String n) =>
@@ -27,6 +28,8 @@ class FixtureApi implements MobileApi {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('BappMobileApp boots, shows nav + renders list from fixtures',
       (t) async {
     await t.pumpWidget(BappMobileApp(
