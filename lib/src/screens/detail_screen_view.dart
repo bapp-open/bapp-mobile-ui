@@ -5,8 +5,10 @@ import 'package:bapp_mobile_ui/src/actions/action_runner.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
+import 'package:bapp_mobile_ui/src/render/overlay.dart';
 import 'package:bapp_mobile_ui/src/render/record_scope.dart';
 import 'package:bapp_mobile_ui/src/render/screen_renderer.dart';
+import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
 
 class DetailScreenView extends StatefulWidget {
   final MobileApi api;
@@ -57,6 +59,47 @@ class _DetailScreenViewState extends State<DetailScreenView> {
     );
   }
 
+  Future<void> _onNavigate(
+      Map<String, dynamic> onTap, Map<String, dynamic>? record) async {
+    if (onTap['present'] != null) {
+      if (!mounted) return;
+      await showPresentOverlay(
+        context,
+        onTap,
+        record,
+        api: widget.api,
+        nodes: widget.nodes,
+        project: widget.project,
+        onAction: (code, rec) => _runAction(code),
+        onNavigate: _onNavigate,
+      );
+      return;
+    }
+    // Plain screen push — push another DetailScreenView.
+    final screenKey = onTap['screen'] as String?;
+    if (screenKey == null || !mounted) return;
+    final params =
+        (onTap['params'] as Map?)?.cast<String, dynamic>() ?? const {};
+    String? recordId;
+    final pkExpr = params['pk'];
+    if (pkExpr is String) {
+      final m = RegExp(r'^\$field\((.+)\)$').firstMatch(pkExpr.trim());
+      final name = m != null ? m.group(1)!.trim() : pkExpr;
+      final v = record?[name] ?? (pkExpr == name ? pkExpr : null);
+      recordId = v?.toString();
+    }
+    if (recordId == null) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => DetailScreenView(
+        api: widget.api,
+        nodes: widget.nodes,
+        project: widget.project,
+        screenKey: screenKey,
+        recordId: recordId!,
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<({ScreenDef screen, Map<String, dynamic>? record})>(
@@ -91,11 +134,14 @@ class _DetailScreenViewState extends State<DetailScreenView> {
             child: BappActionDispatcher(
               onAction: (Node n, Map<String, dynamic>? rec) =>
                   _runAction(n.props['task'] as String? ?? ''),
-              child: RecordScope(
-                record: record,
-                child: Builder(
-                  builder: (c) =>
-                      ScreenRenderer(registry: widget.nodes, node: screen.node),
+              child: BappNavigationDispatcher(
+                onNavigate: _onNavigate,
+                child: RecordScope(
+                  record: record,
+                  child: Builder(
+                    builder: (c) =>
+                        ScreenRenderer(registry: widget.nodes, node: screen.node),
+                  ),
                 ),
               ),
             ),

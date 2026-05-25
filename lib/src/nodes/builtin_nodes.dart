@@ -76,7 +76,34 @@ void registerBuiltinNodes(NodeRegistry registry) {
       child: inner,
     );
   });
+  registry.register('icon', (c, n) {
+    final iconWidget = Icon(_iconFor(n.props['icon'] as String?), size: 20);
+    if (n.onTap == null) return iconWidget;
+    return InkWell(
+      onTap: () => BappNavigationDispatcher.of(c)?.onNavigate(n.onTap!, RecordScope.of(c)),
+      child: Padding(padding: const EdgeInsets.all(4), child: iconWidget),
+    );
+  });
   registerInputNodes(registry);
+}
+
+IconData _iconFor(String? name) {
+  switch (name) {
+    case 'fa-circle-info':
+    case 'info':
+      return Icons.info_outline;
+    case 'fa-key':
+    case 'key':
+      return Icons.key;
+    case 'fa-gear':
+    case 'settings':
+      return Icons.settings;
+    case 'fa-house':
+    case 'home':
+      return Icons.home;
+    default:
+      return Icons.circle;
+  }
 }
 
 Widget _button(BuildContext context, Node node) {

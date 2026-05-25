@@ -18,6 +18,7 @@ import 'package:bapp_mobile_ui/src/screens/selection_store.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
 import 'package:bapp_mobile_ui/src/screens/detail_screen_view.dart';
 import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
+import 'package:bapp_mobile_ui/src/render/overlay.dart';
 import 'package:bapp_mobile_ui/src/render/project_scope.dart';
 
 /// Returns true when [error] represents an HTTP 403 Forbidden response.
@@ -434,6 +435,23 @@ class _BappMobileAppState extends State<BappMobileApp> {
 
   Future<void> _navigate(
       Map<String, dynamic> onTap, Map<String, dynamic>? record) async {
+    // Present overlay (sheet / dialog / popover) — handle before push logic.
+    if (onTap['present'] != null) {
+      final ctx = _navigatorKey.currentContext;
+      if (ctx == null) return;
+      await showPresentOverlay(
+        ctx,
+        onTap,
+        record,
+        api: _api!,
+        nodes: _nodes,
+        project: _selection?.mobileSlug ?? widget.config.project ?? '',
+        onAction: _runActionByCode,
+        onNavigate: _navigate,
+      );
+      return;
+    }
+
     final screenKey = onTap['screen'] as String?;
     if (screenKey == null) return;
     final params =
@@ -459,9 +477,11 @@ class _BappMobileAppState extends State<BappMobileApp> {
     ));
   }
 
-  Future<void> _runAction(Node button, Map<String, dynamic>? record) async {
-    final code = button.props['task'] as String?;
-    if (code == null) return;
+  /// Runs an action by task code directly (used by overlay action menus /
+  /// buttons that already resolved the code string).
+  Future<void> _runActionByCode(
+      String code, Map<String, dynamic>? record) async {
+    if (code.isEmpty) return;
     final payload = <String, dynamic>{};
     final id = record?['id'];
     if (id != null) payload['pk'] = id;
@@ -475,5 +495,11 @@ class _BappMobileAppState extends State<BappMobileApp> {
     if (result.success) {
       setState(() => _refreshTick++);
     }
+  }
+
+  Future<void> _runAction(Node button, Map<String, dynamic>? record) async {
+    final code = button.props['task'] as String?;
+    if (code == null) return;
+    await _runActionByCode(code, record);
   }
 }
