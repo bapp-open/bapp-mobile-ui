@@ -30,7 +30,13 @@ void main() {
     expect(m.app.webApp, 'erp');
     expect(m.app.theme!.primary, '#1E2A3C');
     expect(m.navigation.first.screen, 'company_passwords.passwordentry:list');
-    expect(m.screens.first.key, 'company_passwords.passwordentry:list');
-    expect(m.screens.first.template, 'list');
+    // bootstrap now lists detail first, then list — find the list screen by key
+    final listScreen = m.screens.firstWhere(
+        (s) => s.key == 'company_passwords.passwordentry:list');
+    expect(listScreen.template, 'list');
+    // detail screen is also present in the manifest
+    final detailScreen = m.screens.firstWhere(
+        (s) => s.key == 'company_passwords.passwordentry:detail');
+    expect(detailScreen.template, 'detail');
   });
 }

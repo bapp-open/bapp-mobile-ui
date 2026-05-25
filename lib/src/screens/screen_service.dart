@@ -20,10 +20,9 @@ class ScreenService {
   }
 
   Future<Map<String, dynamic>> _fetch(ScreenRef ref) {
-    if (ref.template == 'list') {
-      final contentType = ref.key.split(':').first;
-      return api.listIntrospect(contentType, project);
-    }
+    final contentType = ref.key.split(':').first;
+    if (ref.template == 'list') return api.listIntrospect(contentType, project);
+    if (ref.template == 'detail') return api.detailIntrospect(contentType, project);
     throw UnsupportedError('mobile template "${ref.template}" not supported yet');
   }
 }

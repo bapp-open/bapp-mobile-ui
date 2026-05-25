@@ -19,7 +19,11 @@ class FakeApi implements MobileApi {
   @override
   Future<Map<String, dynamic>> listIntrospect(String c, String p) async => {};
   @override
+  Future<Map<String, dynamic>> detailIntrospect(String c, String p) async => {};
+  @override
   Future<List<Map<String, dynamic>>> listRecords(String c, Map<String, dynamic> p) async => const [];
+  @override
+  Future<Map<String, dynamic>?> getRecord(String c, String id) async => null;
   @override
   Future<Map<String, dynamic>?> runAction(String code, Map<String, dynamic> payload) async {
     lastCode = code;

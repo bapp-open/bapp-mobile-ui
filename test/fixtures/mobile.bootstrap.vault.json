@@ -20,6 +20,11 @@
   ],
   "screens": [
     {
+      "key": "company_passwords.passwordentry:detail",
+      "template": "detail",
+      "version": "1"
+    },
+    {
       "key": "company_passwords.passwordentry:list",
       "template": "list",
       "version": "1"

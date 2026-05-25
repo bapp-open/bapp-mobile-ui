@@ -13,6 +13,8 @@ import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/cache/cache_store.dart';
 import 'package:bapp_mobile_ui/src/screens/screen_service.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
+import 'package:bapp_mobile_ui/src/screens/detail_screen_view.dart';
+import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
 
 class BappMobileApp extends StatefulWidget {
   final BappMobileConfig config;
@@ -26,6 +28,7 @@ class BappMobileApp extends StatefulWidget {
 class _BappMobileAppState extends State<BappMobileApp> {
   late final NodeRegistry _nodes;
   late final TemplateRegistry _templates;
+  final _navigatorKey = GlobalKey<NavigatorState>();
   MobileApi? _api;
   Future<BootstrapManifest>? _bootstrap;
   String? _error;
@@ -103,6 +106,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       home: _error != null
           ? Scaffold(body: Center(child: Text('Error: $_error')))
@@ -180,12 +184,42 @@ class _BappMobileAppState extends State<BappMobileApp> {
         }
         return BappActionDispatcher(
           onAction: _runAction,
-          child: Builder(
-            builder: (c) => _templates.build(c, snap.data!, _api!, _nodes),
+          child: BappNavigationDispatcher(
+            onNavigate: _navigate,
+            child: Builder(
+              builder: (c) => _templates.build(c, snap.data!, _api!, _nodes),
+            ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _navigate(
+      Map<String, dynamic> onTap, Map<String, dynamic>? record) async {
+    final screenKey = onTap['screen'] as String?;
+    if (screenKey == null) return;
+    final params =
+        (onTap['params'] as Map?)?.cast<String, dynamic>() ?? const {};
+    String? recordId;
+    final pkExpr = params['pk'];
+    if (pkExpr is String) {
+      final m = RegExp(r'^\$field\((.+)\)$').firstMatch(pkExpr.trim());
+      final name = m != null ? m.group(1)!.trim() : pkExpr;
+      final v = record?[name] ?? (pkExpr == name ? pkExpr : null);
+      recordId = v?.toString();
+    }
+    if (recordId == null) return;
+    if (!mounted) return;
+    _navigatorKey.currentState?.push(MaterialPageRoute(
+      builder: (_) => DetailScreenView(
+        api: _api!,
+        nodes: _nodes,
+        project: widget.config.project,
+        screenKey: screenKey,
+        recordId: recordId!,
+      ),
+    ));
   }
 
   Future<void> _runAction(Node button, Map<String, dynamic>? record) async {

@@ -4,6 +4,7 @@ import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/nodes/field_widget.dart';
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
 import 'package:bapp_mobile_ui/src/render/record_scope.dart';
+import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
 
 /// Registers the v1 built-in node kinds into [registry]. `list` is intentionally
 /// NOT registered here — it is handled by the list template.
@@ -19,16 +20,26 @@ void registerBuiltinNodes(NodeRegistry registry) {
             .map((w) => Flexible(child: w))
             .toList(),
       ));
-  registry.register('card', (c, n) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: registry.buildChildren(c, n),
-          ),
+  registry.register('card', (c, n) {
+    final inner = Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: registry.buildChildren(c, n),
         ),
-      ));
+      ),
+    );
+    if (n.onTap == null) return inner;
+    return InkWell(
+      onTap: () {
+        final nav = BappNavigationDispatcher.of(c);
+        if (nav != null) nav.onNavigate(n.onTap!, RecordScope.of(c));
+      },
+      child: inner,
+    );
+  });
   registry.register('section', (c, n) {
     final title = n.props['title'] as String?;
     return Column(
