@@ -7,12 +7,14 @@ class BappMobileConfig {
   final String host;
   final String? project; // mobile app slug — pins to one app when set
   final String? clientId; // Keycloak client id; defaults to project
+  final String? customScheme; // OAuth redirect scheme; defaults to com.bapp.auth
   final Map<String, NodeBuilder>? nodes; // custom node-kinds
   final Map<String, TemplateBuilder>? templates; // custom templates
   const BappMobileConfig({
     required this.host,
     this.project,
     this.clientId,
+    this.customScheme,
     this.nodes,
     this.templates,
   });

@@ -229,6 +229,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
         host: widget.config.host,
         app: projectOrDefault,
         clientId: widget.config.clientId ?? projectOrDefault,
+        customScheme: widget.config.customScheme,
         ssoAutoLogin: true,
       ),
     );

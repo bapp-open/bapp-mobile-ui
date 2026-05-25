@@ -1,0 +1,7 @@
+{
+  "_comment": "Copy to bapp_dev.json (gitignored) and fill in. Run: flutter run --dart-define-from-file=bapp_dev.json",
+  "BAPP_HOST": "https://your-bapp-deployment/api",
+  "BAPP_PROJECT": "",
+  "BAPP_CLIENT_ID": "",
+  "BAPP_SCHEME": ""
+}
