@@ -31,6 +31,9 @@ class FixtureApi implements MobileApi {
   Future<Map<String, dynamic>> detailIntrospect(String ct, String project) async =>
       _f('mobile.detailintrospect.passwordentry.json');
   @override
+  Future<Map<String, dynamic>> screenIntrospect(String key, String project) async =>
+      _f('mobile.screen.dashboard.json');
+  @override
   Future<List<Map<String, dynamic>>> listRecords(
           String ct, Map<String, dynamic> params) async =>
       [
@@ -58,7 +61,20 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    expect(find.text('Passwords'), findsWidgets); // app bar title (nav label)
+    // First tab is now 'home' (dashboard) — nav bar shows all 3 labels
+    expect(find.text('Acasă'), findsWidgets); // app bar title + bottom nav
+    // 'Passwords' appears as both a dashboard tile label and a bottom-nav label
+    expect(find.text('Passwords'), findsWidgets);
+    expect(find.text('Setări'), findsWidgets); // bottom nav label + dashboard tile
+
+    // Tap the 'Passwords' bottom nav item to switch to the list tab
+    // Use BottomNavigationBar to find the right target
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
+
     expect(find.text('Gmail'), findsOneWidget);
     expect(find.text('a@example.com'), findsOneWidget);
     expect(find.text('GitHub'), findsOneWidget);
@@ -72,10 +88,17 @@ void main() {
     ));
     await t.pumpAndSettle();
 
+    // Navigate to the Passwords (list) tab first via the bottom nav bar
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
+
     // List is showing
     expect(find.text('Gmail'), findsOneWidget);
 
-    // Tap the first card (which has on_tap navigate)
+    // Tap the first Card that is a list row (skip tile cards on dashboard)
     await t.tap(find.byType(Card).first);
     await t.pumpAndSettle();
 

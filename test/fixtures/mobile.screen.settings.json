@@ -1,0 +1,37 @@
+{
+  "key": "mobile.settings",
+  "template": "settings",
+  "title": "Setări",
+  "version": "1",
+  "data": {
+    "source": "task",
+    "task": "mobile.getsettings"
+  },
+  "node": {
+    "kind": "column",
+    "children": [
+      {
+        "kind": "switch",
+        "props": {
+          "name": "biometric_unlock",
+          "label": "Biometric unlock"
+        }
+      },
+      {
+        "kind": "switch",
+        "props": {
+          "name": "hide_passwords",
+          "label": "Hide passwords by default"
+        }
+      }
+    ]
+  },
+  "actions": [
+    {
+      "key": "mobile.setsettings",
+      "label": "Save",
+      "kind": "task",
+      "submit": true
+    }
+  ]
+}

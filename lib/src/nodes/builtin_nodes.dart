@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
 import 'package:bapp_mobile_ui/src/nodes/field_widget.dart';
+import 'package:bapp_mobile_ui/src/nodes/input_nodes.dart';
 import 'package:bapp_mobile_ui/src/actions/action_dispatcher.dart';
 import 'package:bapp_mobile_ui/src/render/record_scope.dart';
 import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
@@ -59,6 +60,23 @@ void registerBuiltinNodes(NodeRegistry registry) {
   registry.register('text', (c, n) => Text('${n.props['value'] ?? ''}'));
   registry.register('field', buildFieldWidget);
   registry.register('button', (c, n) => _button(c, n));
+  registry.register('tile', (c, n) {
+    final label = n.props['label'] as String? ?? '';
+    final inner = Card(
+      child: ListTile(
+        leading: const Icon(Icons.dashboard_outlined),
+        title: Text(label),
+        trailing: n.onTap != null ? const Icon(Icons.chevron_right) : null,
+      ),
+    );
+    if (n.onTap == null) return inner;
+    return InkWell(
+      onTap: () => BappNavigationDispatcher.of(c)?.onNavigate(
+          n.onTap!, RecordScope.of(c)),
+      child: inner,
+    );
+  });
+  registerInputNodes(registry);
 }
 
 Widget _button(BuildContext context, Node node) {

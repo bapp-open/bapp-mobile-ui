@@ -12,10 +12,22 @@
   },
   "navigation": [
     {
+      "key": "home",
+      "label": "Acasă",
+      "icon": "fa-house",
+      "screen": "company_passwords.home"
+    },
+    {
       "key": "passwords",
       "label": "Passwords",
       "icon": "fa-key",
       "screen": "company_passwords.passwordentry:list"
+    },
+    {
+      "key": "settings",
+      "label": "Setări",
+      "icon": "fa-gear",
+      "screen": "mobile.settings"
     }
   ],
   "screens": [
@@ -27,6 +39,16 @@
     {
       "key": "company_passwords.passwordentry:list",
       "template": "list",
+      "version": "1"
+    },
+    {
+      "key": "company_passwords.home",
+      "template": "dashboard",
+      "version": "1"
+    },
+    {
+      "key": "mobile.settings",
+      "template": "settings",
       "version": "1"
     }
   ],

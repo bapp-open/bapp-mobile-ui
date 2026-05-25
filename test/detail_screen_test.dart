@@ -23,6 +23,8 @@ class FakeDetailApi implements MobileApi {
   Future<Map<String, dynamic>> detailIntrospect(String ct, String p) async =>
       _f('mobile.detailintrospect.passwordentry.json');
   @override
+  Future<Map<String, dynamic>> screenIntrospect(String key, String p) async => {};
+  @override
   Future<List<Map<String, dynamic>>> listRecords(
           String ct, Map<String, dynamic> params) async =>
       const [];

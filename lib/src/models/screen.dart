@@ -5,12 +5,15 @@ class DataBinding {
   final String contentType;
   final String method;
   final Map<String, dynamic> params;
+  /// For source=='task' bindings: the task code used to fetch initial values.
+  final String? task;
 
   const DataBinding({
     required this.source,
     required this.contentType,
     required this.method,
     this.params = const {},
+    this.task,
   });
 
   factory DataBinding.fromJson(Map<String, dynamic> j) => DataBinding(
@@ -18,6 +21,7 @@ class DataBinding {
         contentType: (j['content_type'] as String?) ?? '',
         method: (j['method'] as String?) ?? 'list',
         params: (j['params'] as Map?)?.cast<String, dynamic>() ?? const {},
+        task: j['task'] as String?,
       );
 }
 

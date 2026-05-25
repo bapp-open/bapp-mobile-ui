@@ -29,14 +29,25 @@ void main() {
     expect(m.app.name, 'Vault');
     expect(m.app.webApp, 'erp');
     expect(m.app.theme!.primary, '#1E2A3C');
-    expect(m.navigation.first.screen, 'company_passwords.passwordentry:list');
-    // bootstrap now lists detail first, then list — find the list screen by key
+    // bootstrap now has 3 nav items; first is home (dashboard)
+    expect(m.navigation.first.key, 'home');
+    expect(m.navigation.first.screen, 'company_passwords.home');
+    // passwords nav item is second
+    expect(m.navigation[1].key, 'passwords');
+    expect(m.navigation[1].screen, 'company_passwords.passwordentry:list');
+    // 4 screens: detail, list, dashboard, settings
+    expect(m.screens.length, 4);
     final listScreen = m.screens.firstWhere(
         (s) => s.key == 'company_passwords.passwordentry:list');
     expect(listScreen.template, 'list');
-    // detail screen is also present in the manifest
     final detailScreen = m.screens.firstWhere(
         (s) => s.key == 'company_passwords.passwordentry:detail');
     expect(detailScreen.template, 'detail');
+    final dashScreen = m.screens.firstWhere(
+        (s) => s.key == 'company_passwords.home');
+    expect(dashScreen.template, 'dashboard');
+    final settingsScreen = m.screens.firstWhere(
+        (s) => s.key == 'mobile.settings');
+    expect(settingsScreen.template, 'settings');
   });
 }

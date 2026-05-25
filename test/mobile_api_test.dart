@@ -82,6 +82,45 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // screenIntrospect
+  // ---------------------------------------------------------------------------
+  test('screenIntrospect POSTs mobile.screenintrospect with key= and app=',
+      () async {
+    late http.Request captured;
+    final mockClient = MockClient((req) async {
+      captured = req;
+      return http.Response(
+        jsonEncode({
+          'key': 'company_passwords.home',
+          'template': 'dashboard',
+          'version': '1',
+          'node': {'kind': 'column', 'children': <dynamic>[]},
+          'actions': <dynamic>[],
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final client = BappApiClient(
+      token: 'test-token',
+      host: 'https://test.bapp.ro/api',
+      maxRetries: 0,
+      httpClient: mockClient,
+    );
+    final api = BappMobileApi(client);
+
+    final result =
+        await api.screenIntrospect('company_passwords.home', 'vault');
+
+    expect(captured.url.toString(), contains('mobile.screenintrospect'));
+    expect(captured.method, equals('POST'));
+    final body = jsonDecode(captured.body) as Map;
+    expect(body['key'], equals('company_passwords.home'));
+    expect(body['app'], equals('vault'));
+    expect(result['template'], equals('dashboard'));
+  });
+
+  // ---------------------------------------------------------------------------
   // listRecords
   // ---------------------------------------------------------------------------
   test('listRecords GETs content-type endpoint and stringifies int params', () async {

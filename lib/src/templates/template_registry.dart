@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/api/mobile_api.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
+import 'package:bapp_mobile_ui/src/render/screen_renderer.dart';
 import 'package:bapp_mobile_ui/src/templates/list_template.dart';
+import 'package:bapp_mobile_ui/src/templates/form_templates.dart';
 
 /// Builds a full screen for a given template name. Deps (api, nodes) are passed
 /// explicitly so templates are testable in isolation.
@@ -25,6 +27,16 @@ class TemplateRegistry {
 void registerBuiltinTemplates(TemplateRegistry registry) {
   registry.register('list',
       (c, s, api, nodes) => ListTemplate(screen: s, api: api, nodes: nodes));
+  registry.register('dashboard',
+      (c, s, api, nodes) => SingleChildScrollView(
+            child: ScreenRenderer(registry: nodes, node: s.node),
+          ));
+  registry.register('form',
+      (c, s, api, nodes) =>
+          FormTemplate(screen: s, api: api, nodes: nodes));
+  registry.register('settings',
+      (c, s, api, nodes) =>
+          FormTemplate(screen: s, api: api, nodes: nodes, settings: true));
 }
 
 class UnsupportedTemplate extends StatelessWidget {

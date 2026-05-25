@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bapp_mobile_ui/bapp_mobile_ui.dart';
@@ -93,6 +94,11 @@ class _FakeApi implements MobileApi {
       _f('mobile.detailintrospect.passwordentry.json');
 
   @override
+  Future<Map<String, dynamic>> screenIntrospect(
+          String key, String project) async =>
+      _f('mobile.screen.dashboard.json');
+
+  @override
   Future<List<Map<String, dynamic>>> listRecords(
           String ct, Map<String, dynamic> params) async =>
       [
@@ -129,11 +135,17 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    // Should be on the nav shell — list content visible
-    expect(find.text('Gmail'), findsOneWidget);
-    // No picker shown
+    // Should be on the nav shell — no picker shown
     expect(find.byType(AppPicker), findsNothing);
     expect(find.byType(TenantPicker), findsNothing);
+
+    // First tab is dashboard; tap Passwords bottom-nav item to see list content
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
+    expect(find.text('Gmail'), findsOneWidget);
   });
 
   // -------------------------------------------------------------------------
@@ -157,7 +169,12 @@ void main() {
     await t.tap(find.text('Vault'));
     await t.pumpAndSettle();
 
-    // Should now be on the nav shell
+    // Should now be on the nav shell; tap Passwords bottom-nav to see list
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
     expect(find.text('Gmail'), findsOneWidget);
   });
 
@@ -182,7 +199,12 @@ void main() {
     await t.tap(find.text('ACME SRL'));
     await t.pumpAndSettle();
 
-    // Nav shell loaded
+    // Nav shell loaded; tap Passwords bottom-nav to see list content
+    await t.tap(find.descendant(
+      of: find.byType(BottomNavigationBar),
+      matching: find.text('Passwords'),
+    ));
+    await t.pumpAndSettle();
     expect(find.text('Gmail'), findsOneWidget);
   });
 

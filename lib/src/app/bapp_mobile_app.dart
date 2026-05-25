@@ -18,6 +18,7 @@ import 'package:bapp_mobile_ui/src/screens/selection_store.dart';
 import 'package:bapp_mobile_ui/src/templates/template_registry.dart';
 import 'package:bapp_mobile_ui/src/screens/detail_screen_view.dart';
 import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
+import 'package:bapp_mobile_ui/src/render/project_scope.dart';
 
 /// Returns true when [error] represents an HTTP 403 Forbidden response.
 /// BappApiClient throws `Exception('BappApiClient: METHOD path failed with 403')`.
@@ -371,20 +372,23 @@ class _BappMobileAppState extends State<BappMobileApp> {
     );
     return Theme(
       data: theme,
-      child: Scaffold(
-        appBar: AppBar(title: Text(current.label)),
-        body: _screen(context, m, current),
-        bottomNavigationBar: nav.length > 1
-            ? BottomNavigationBar(
-                currentIndex: index,
-                onTap: (i) => setState(() => _navIndex = i),
-                items: [
-                  for (final n in nav)
-                    BottomNavigationBarItem(
-                        icon: const Icon(Icons.dashboard), label: n.label),
-                ],
-              )
-            : null,
+      child: ProjectScope(
+        project: _selection!.mobileSlug,
+        child: Scaffold(
+          appBar: AppBar(title: Text(current.label)),
+          body: _screen(context, m, current),
+          bottomNavigationBar: nav.length > 1
+              ? BottomNavigationBar(
+                  currentIndex: index,
+                  onTap: (i) => setState(() => _navIndex = i),
+                  items: [
+                    for (final n in nav)
+                      BottomNavigationBarItem(
+                          icon: const Icon(Icons.dashboard), label: n.label),
+                  ],
+                )
+              : null,
+        ),
       ),
     );
   }

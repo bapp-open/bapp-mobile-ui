@@ -27,6 +27,9 @@ class FakeApi implements MobileApi {
   Future<Map<String, dynamic>> detailIntrospect(String ct, String project) async => {};
 
   @override
+  Future<Map<String, dynamic>> screenIntrospect(String key, String project) async => {};
+
+  @override
   Future<List<Map<String, dynamic>>> listRecords(
       String ct, Map<String, dynamic> params) async {
     lastContentType = ct;

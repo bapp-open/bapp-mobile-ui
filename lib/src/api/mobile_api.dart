@@ -7,6 +7,7 @@ abstract class MobileApi {
   Future<Map<String, dynamic>> bootstrap(String project);
   Future<Map<String, dynamic>> listIntrospect(String contentType, String project);
   Future<Map<String, dynamic>> detailIntrospect(String contentType, String project);
+  Future<Map<String, dynamic>> screenIntrospect(String key, String project);
   Future<List<Map<String, dynamic>>> listRecords(
       String contentType, Map<String, dynamic> params);
   Future<Map<String, dynamic>?> getRecord(String contentType, String id);
@@ -43,6 +44,13 @@ class BappMobileApi implements MobileApi {
   Future<Map<String, dynamic>> detailIntrospect(String contentType, String project) async {
     final res = await _client
         .runTask('mobile.detailintrospect', {'ct': contentType, 'app': project});
+    return (res as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> screenIntrospect(String key, String project) async {
+    final res = await _client
+        .runTask('mobile.screenintrospect', {'key': key, 'app': project});
     return (res as Map).cast<String, dynamic>();
   }
 

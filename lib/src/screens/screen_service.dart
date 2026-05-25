@@ -23,6 +23,6 @@ class ScreenService {
     final contentType = ref.key.split(':').first;
     if (ref.template == 'list') return api.listIntrospect(contentType, project);
     if (ref.template == 'detail') return api.detailIntrospect(contentType, project);
-    throw UnsupportedError('mobile template "${ref.template}" not supported yet');
+    return api.screenIntrospect(ref.key, project);
   }
 }

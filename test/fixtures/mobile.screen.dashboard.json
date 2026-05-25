@@ -1,0 +1,37 @@
+{
+  "key": "company_passwords.home",
+  "template": "dashboard",
+  "title": "Acasă",
+  "version": "1",
+  "data": null,
+  "node": {
+    "kind": "column",
+    "children": [
+      {
+        "kind": "tile",
+        "props": {
+          "label": "Passwords",
+          "icon": "fa-key"
+        },
+        "on_tap": {
+          "kind": "navigate",
+          "screen": "company_passwords.passwordentry:list",
+          "params": {}
+        }
+      },
+      {
+        "kind": "tile",
+        "props": {
+          "label": "Setări",
+          "icon": "fa-gear"
+        },
+        "on_tap": {
+          "kind": "navigate",
+          "screen": "mobile.settings",
+          "params": {}
+        }
+      }
+    ]
+  },
+  "actions": []
+}
