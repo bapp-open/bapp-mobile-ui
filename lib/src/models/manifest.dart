@@ -73,12 +73,17 @@ class BootstrapManifest {
   final String version;
   final MobileAppInfo app;
   final List<NavItem> navigation;
+
+  /// Screen key the app boots into (the backend-defined default dashboard).
+  /// Falls back to the first navigation screen when null.
+  final String? home;
   final List<ScreenRef> screens;
   final Map<String, dynamic> capabilities;
   const BootstrapManifest({
     required this.version,
     required this.app,
     this.navigation = const [],
+    this.home,
     this.screens = const [],
     this.capabilities = const {},
   });
@@ -89,6 +94,7 @@ class BootstrapManifest {
             .cast<Map<String, dynamic>>()
             .map(NavItem.fromJson)
             .toList(),
+        home: j['home'] as String?,
         screens: ((j['screens'] as List?) ?? const [])
             .cast<Map<String, dynamic>>()
             .map(ScreenRef.fromJson)

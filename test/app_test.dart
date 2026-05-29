@@ -49,8 +49,33 @@ class FixtureApi implements MobileApi {
       {'success': true, 'message': 'ok'};
 }
 
+/// Same fixtures, but the manifest's `home` points at the list screen (the
+/// 2nd nav item) instead of the dashboard — to prove home routing isn't just
+/// "show nav[0]".
+class HomeRoutingApi extends FixtureApi {
+  @override
+  Future<Map<String, dynamic>> bootstrap(String project) async {
+    final m = await super.bootstrap(project);
+    return {...m, 'home': 'company_passwords.passwordentry:list'};
+  }
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('boots into the manifest home screen even when not the first nav',
+      (t) async {
+    await t.pumpWidget(BappMobileApp(
+      config: const BappMobileConfig(
+          host: 'https://example.test/api', project: 'vault'),
+      apiOverride: HomeRoutingApi(),
+    ));
+    await t.pumpAndSettle();
+
+    // home → passwords list, so list content shows on first load with no taps.
+    expect(find.text('Gmail'), findsOneWidget);
+    expect(find.text('GitHub'), findsOneWidget);
+  });
 
   testWidgets('BappMobileApp boots, shows nav + renders list from fixtures',
       (t) async {

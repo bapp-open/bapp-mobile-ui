@@ -66,6 +66,26 @@ Map<String, dynamic> _twoTenants() => {
       ]
     };
 
+/// Two tenants, each offering a DIFFERENT single app (the case that
+/// distinguishes app-first from tenant-first routing).
+Map<String, dynamic> _appsAcrossTenants() => {
+      'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
+      'memberships': [
+        {
+          'tenant': {'id': 'tenant-1', 'name': 'ACME SRL'},
+          'apps': [
+            {'slug': 'vault', 'name': 'Vault', 'web_app': 'erp'}
+          ]
+        },
+        {
+          'tenant': {'id': 'tenant-2', 'name': 'Beta SRL'},
+          'apps': [
+            {'slug': 'crm', 'name': 'CRM', 'web_app': 'crm'}
+          ]
+        },
+      ]
+    };
+
 /// No memberships at all.
 Map<String, dynamic> _noApps() => {
       'user': {'sub': 'u1', 'email': 't@x.io', 'name': 'Test User'},
@@ -185,10 +205,11 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 3. Two tenants → TenantPicker shown first; pick → boots (single app per tenant)
+  // 3. Two tenants, same single app → single app auto-selected (no AppPicker),
+  //    TenantPicker shown; pick → boots
   // -------------------------------------------------------------------------
   testWidgets(
-      'two tenants → TenantPicker shown first; pick tenant → boots',
+      'two tenants, one app → AppPicker skipped, TenantPicker shown; pick boots',
       (t) async {
     await t.pumpWidget(BappMobileApp(
       // project null — full tenant-first flow
@@ -197,7 +218,8 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    // TenantPicker shown first
+    // Single app → AppPicker skipped; TenantPicker shown directly
+    expect(find.byType(AppPicker), findsNothing);
     expect(find.byType(TenantPicker), findsOneWidget);
     expect(find.text('ACME SRL'), findsOneWidget);
     expect(find.text('Beta SRL'), findsOneWidget);
@@ -264,8 +286,112 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // 6. Different apps in different tenants → AppPicker FIRST (app-first), then
+  //    the chosen app auto-boots its single tenant.
+  // -------------------------------------------------------------------------
+  testWidgets(
+      'different apps per tenant → AppPicker first; pick app → auto-boots its tenant',
+      (t) async {
+    await t.pumpWidget(BappMobileApp(
+      config: const BappMobileConfig(host: 'https://example.test/api'),
+      apiOverride: _FakeApi(accessResult: _appsAcrossTenants()),
+    ));
+    await t.pumpAndSettle();
+
+    // App-first: AppPicker shown before any tenant choice.
+    expect(find.byType(AppPicker), findsOneWidget);
+    expect(find.byType(TenantPicker), findsNothing);
+    expect(find.text('Vault'), findsOneWidget);
+    expect(find.text('CRM'), findsOneWidget);
+
+    // Pick "Vault" → it has a single tenant (ACME) → boots without a picker.
+    await t.tap(find.text('Vault'));
+    await t.pumpAndSettle();
+    expect(find.byType(TenantPicker), findsNothing);
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // 7. allowedApps narrows to a single app → AppPicker skipped entirely.
+  //    (A "Vault-only" build off a backend that also exposes CRM.)
+  // -------------------------------------------------------------------------
+  testWidgets('allowedApps filters to one app → no AppPicker, boots straight',
+      (t) async {
+    await t.pumpWidget(BappMobileApp(
+      config: const BappMobileConfig(
+          host: 'https://example.test/api', allowedApps: ['vault']),
+      apiOverride: _FakeApi(accessResult: _twoApps()),
+    ));
+    await t.pumpAndSettle();
+
+    // CRM was filtered out → single app + single tenant → straight to shell.
+    expect(find.byType(AppPicker), findsNothing);
+    expect(find.byType(TenantPicker), findsNothing);
+    expect(find.text('CRM'), findsNothing);
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
+  // 8. allowedApps selecting a different app yields a different single-app
+  //    build off the same backend/account.
+  // -------------------------------------------------------------------------
+  testWidgets('allowedApps can pin a different build (crm-only)', (t) async {
+    await t.pumpWidget(BappMobileApp(
+      config: const BappMobileConfig(
+          host: 'https://example.test/api', allowedApps: ['crm']),
+      apiOverride: _FakeApi(accessResult: _appsAcrossTenants()),
+    ));
+    await t.pumpAndSettle();
+
+    // Only crm is allowed → its single tenant (Beta) auto-boots, no pickers.
+    expect(find.byType(AppPicker), findsNothing);
+    expect(find.byType(TenantPicker), findsNothing);
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+  });
+
+  // -------------------------------------------------------------------------
   // Unit tests for AccessInfo helpers
   // -------------------------------------------------------------------------
+  group('AccessInfo.appsFirst', () {
+    test('distinct apps each with their offering tenants', () {
+      final info = AccessInfo.fromJson(_appsAcrossTenants());
+      final af = info.appsFirst();
+      expect(af.length, 2);
+      final vault = af.firstWhere((e) => e.app.slug == 'vault');
+      final crm = af.firstWhere((e) => e.app.slug == 'crm');
+      expect(vault.tenants.map((t) => t.id), ['tenant-1']);
+      expect(crm.tenants.map((t) => t.id), ['tenant-2']);
+    });
+
+    test('same app across tenants collapses to one entry with both tenants', () {
+      final info = AccessInfo.fromJson(_twoTenants());
+      final af = info.appsFirst();
+      expect(af.length, 1);
+      expect(af.first.app.slug, 'vault');
+      expect(af.first.tenants.map((t) => t.id).toSet(),
+          containsAll(['tenant-1', 'tenant-2']));
+    });
+  });
+
+  group('BappMobileConfig.allowsApp', () {
+    test('null allowedApps + no project allows everything', () {
+      const c = BappMobileConfig(host: 'h');
+      expect(c.allowsApp('vault'), isTrue);
+      expect(c.allowsApp('anything'), isTrue);
+    });
+    test('allowedApps restricts to the listed slugs', () {
+      const c = BappMobileConfig(host: 'h', allowedApps: ['vault']);
+      expect(c.allowsApp('vault'), isTrue);
+      expect(c.allowsApp('crm'), isFalse);
+    });
+    test('project is a hard pin that overrides allowedApps', () {
+      const c =
+          BappMobileConfig(host: 'h', project: 'vault', allowedApps: ['crm']);
+      expect(c.allowsApp('vault'), isTrue);
+      expect(c.allowsApp('crm'), isFalse);
+    });
+  });
+
   group('AccessInfo.pairs', () {
     test('returns flat (app, tenant) pairs', () {
       final info = AccessInfo.fromJson(_twoTenants());

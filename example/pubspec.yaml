@@ -10,7 +10,14 @@ dependencies:
     sdk: flutter
   bapp_mobile_ui:
     path: ../
+  # Bundled icon font used by the embedded-icons demo (main_icons.dart). It is
+  # freely redistributable, so it stands in for a licensed Font Awesome Pro
+  # font to demonstrate the embed→resolve path end-to-end.
+  cupertino_icons: ^1.0.6
 dev_dependencies:
   flutter_lints: ^4.0.0
+  flutter_test:
+    sdk: flutter
+  shared_preferences: ^2.0.0
 flutter:
   uses-material-design: true

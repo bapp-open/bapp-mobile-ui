@@ -13,6 +13,7 @@ import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/models/screen.dart';
 import 'package:bapp_mobile_ui/src/nodes/builtin_nodes.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
+import 'package:bapp_mobile_ui/src/render/icon_resolver.dart';
 import 'package:bapp_mobile_ui/src/cache/cache_store.dart';
 import 'package:bapp_mobile_ui/src/screens/screen_service.dart';
 import 'package:bapp_mobile_ui/src/screens/selection_store.dart';
@@ -44,7 +45,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
   BappAuth? _auth; // non-null only on the real auth path
   Future<BootstrapManifest>? _bootstrap;
   String? _error;
-  int _navIndex = 0;
+  int? _navIndex; // null → boot into the manifest's home screen
   int _refreshTick = 0;
   CacheStore? _cache;
   SelectionStore? _selectionStore;
@@ -63,7 +64,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
   void initState() {
     super.initState();
     _nodes = NodeRegistry();
-    registerBuiltinNodes(_nodes);
+    registerBuiltinNodes(_nodes, iconResolver: widget.config.iconResolver);
     if (widget.config.nodes != null) _nodes.registerAll(widget.config.nodes!);
     _templates = TemplateRegistry();
     registerBuiltinTemplates(_templates);
@@ -112,13 +113,24 @@ class _BappMobileAppState extends State<BappMobileApp> {
     }
   }
 
-  /// Resolves which (tenant, app) to boot, using persisted selection or the
-  /// picker UI. When a selection is made [_bootSelection] is called.
+  /// The distinct apps this build may offer (app-first), each with the tenants
+  /// that grant it. Narrowed by [BappMobileConfig.project] / `allowedApps`.
+  List<({AccessApp app, List<AccessTenant> tenants})> _allowedAppsFirst(
+          AccessInfo access) =>
+      access
+          .appsFirst()
+          .where((e) => widget.config.allowsApp(e.app.slug))
+          .toList();
+
+  /// Resolves which (app, tenant) to boot, using persisted selection or the
+  /// picker UI. App-first: pick the app, then its tenant. When a selection is
+  /// made [_bootSelection] is called. Pickers are skipped whenever the choice
+  /// is unambiguous (one app → skip AppPicker; one tenant → boot directly).
   Future<void> _resolveSelection(AccessInfo access) async {
-    // 1. Try persisted selection first.
+    // 1. Try persisted selection first — still honouring this build's allowlist.
     if (_selectionStore != null) {
       final saved = await _selectionStore!.read();
-      if (saved != null) {
+      if (saved != null && widget.config.allowsApp(saved.mobileSlug)) {
         // Valid if the tenant exists AND that tenant offers an app with the
         // stored mobile slug.
         final valid = access.memberships.any((m) =>
@@ -134,45 +146,24 @@ class _BappMobileAppState extends State<BappMobileApp> {
       }
     }
 
-    // 2. Pinned project path.
-    final pinned = widget.config.project;
-    if (pinned != null) {
-      // Tenants that offer the pinned mobile slug.
-      final matchingTenants = access.memberships
-          .where((m) => m.apps.any((a) => a.slug == pinned))
-          .toList();
-      if (matchingTenants.isEmpty) {
-        if (mounted) setState(() => _loading = false);
-        return; // NoAccessView shown via _buildSelectionWidget
-      }
-      if (matchingTenants.length == 1) {
-        final app = matchingTenants.first.apps.firstWhere((a) => a.slug == pinned);
-        await _bootSelection(app, matchingTenants.first.tenant);
-        return;
-      }
-      // Multiple tenants for the pinned app — show TenantPicker.
-      if (mounted) setState(() => _loading = false);
-      return; // build() will show TenantPicker
-    }
-
-    // 3. Tenant-first flow.
-    final tf = access.tenantsFirst();
-    if (tf.isEmpty) {
+    // 2. App-first flow.
+    final af = _allowedAppsFirst(access);
+    if (af.isEmpty) {
       if (mounted) setState(() => _loading = false);
       return; // NoAccessView
     }
-    if (tf.length == 1) {
-      final entry = tf.first;
-      if (entry.apps.length == 1) {
-        // Single tenant, single app — boot immediately.
-        await _bootSelection(entry.apps.first, entry.tenant);
+    if (af.length == 1) {
+      final entry = af.first;
+      if (entry.tenants.length == 1) {
+        // Single app, single tenant — boot straight to the dashboard.
+        await _bootSelection(entry.app, entry.tenants.first);
         return;
       }
-      // Single tenant, multiple apps — skip TenantPicker, go straight to AppPicker.
+      // Single app, multiple tenants — skip AppPicker, show TenantPicker.
       if (mounted) setState(() => _loading = false);
       return;
     }
-    // Multiple tenants — show TenantPicker.
+    // Multiple apps — show AppPicker.
     if (mounted) setState(() => _loading = false);
   }
 
@@ -194,6 +185,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
     if (!mounted) return;
     setState(() {
       _selection = sel;
+      _navIndex = null; // start each app on its home screen
       _loading = true;
       _bootstrap = BootstrapService(api: _api!, project: app.slug).load();
       _loading = false;
@@ -207,6 +199,7 @@ class _BappMobileAppState extends State<BappMobileApp> {
     setState(() {
       _selection = null;
       _bootstrap = null;
+      _navIndex = null;
       _loading = true;
     });
     // Re-run selection with the existing access info (avoid another network call).
@@ -320,59 +313,39 @@ class _BappMobileAppState extends State<BappMobileApp> {
   }
 
   /// Builds the appropriate selection widget based on the access matrix state.
-  /// Tenant-first: TenantPicker → AppPicker (or auto) → boot.
+  /// App-first: AppPicker → TenantPicker (or auto) → boot. The AppPicker is
+  /// skipped when only one app is available; the TenantPicker is skipped when
+  /// the chosen app has only one tenant (handled in [_resolveSelection]).
   Widget _buildSelectionWidget() {
     final access = _access;
     if (access == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final pinned = widget.config.project;
-    if (pinned != null) {
-      // Tenants that offer the pinned mobile slug.
-      final matchingMemberships = access.memberships
-          .where((m) => m.apps.any((a) => a.slug == pinned))
-          .toList();
-      if (matchingMemberships.isEmpty) return const NoAccessView();
-      // Multiple tenants — show TenantPicker (single tenant was auto-selected
-      // in _resolveSelection so we only reach here with >1).
-      final tenants = matchingMemberships.map((m) => m.tenant).toList();
+    final af = _allowedAppsFirst(access);
+    if (af.isEmpty) return const NoAccessView();
+
+    // Single app — skip the AppPicker, go straight to tenant selection.
+    if (af.length == 1) {
+      final entry = af.first;
       return TenantPicker(
-        tenants: tenants,
-        onPick: (tenant) {
-          final app = matchingMemberships
-              .firstWhere((m) => m.tenant.id == tenant.id)
-              .apps
-              .firstWhere((a) => a.slug == pinned);
-          _bootSelection(app, tenant);
-        },
+        tenants: entry.tenants,
+        onPick: (tenant) => _bootSelection(entry.app, tenant),
       );
     }
 
-    final tf = access.tenantsFirst();
-    if (tf.isEmpty) return const NoAccessView();
-
-    // Single tenant with multiple apps — skip TenantPicker, show AppPicker.
-    if (tf.length == 1) {
-      return AppPicker(
-        apps: tf.first.apps,
-        onPick: (app) => _bootSelection(app, tf.first.tenant),
-      );
-    }
-
-    // Multiple tenants — show TenantPicker first.
-    return TenantPicker(
-      tenants: tf.map((e) => e.tenant).toList(),
-      onPick: (tenant) {
-        final entry = tf.firstWhere((e) => e.tenant.id == tenant.id);
-        if (entry.apps.length == 1) {
-          _bootSelection(entry.apps.first, tenant);
+    // Multiple apps — pick the app first, then its tenant (auto if only one).
+    return AppPicker(
+      apps: af.map((e) => e.app).toList(),
+      onPick: (app) {
+        final entry = af.firstWhere((e) => e.app.slug == app.slug);
+        if (entry.tenants.length == 1) {
+          _bootSelection(app, entry.tenants.first);
         } else {
-          // Push AppPicker for this tenant's apps.
           _navigatorKey.currentState?.push(MaterialPageRoute(
-            builder: (_) => AppPicker(
-              apps: entry.apps,
-              onPick: (app) {
+            builder: (_) => TenantPicker(
+              tenants: entry.tenants,
+              onPick: (tenant) {
                 _navigatorKey.currentState?.pop();
                 _bootSelection(app, tenant);
               },
@@ -389,16 +362,37 @@ class _BappMobileAppState extends State<BappMobileApp> {
 
   Widget _shell(BuildContext context, BootstrapManifest m) {
     final nav = m.navigation;
-    if (nav.isEmpty) {
-      return Scaffold(
-          body: Center(
-              child: Text(AppLocalizations.of(context).noScreens)));
-    }
-    final index = _navIndex.clamp(0, nav.length - 1);
-    final current = nav[index];
     final theme = Theme.of(context).copyWith(
       colorScheme: ColorScheme.fromSeed(seedColor: _primary(m)),
     );
+
+    // No bottom-nav: render the home screen directly (still a full shell).
+    if (nav.isEmpty) {
+      if (m.home == null) {
+        return Scaffold(
+            body: Center(child: Text(AppLocalizations.of(context).noScreens)));
+      }
+      final home = NavItem(key: 'home', label: m.app.name, screen: m.home);
+      return Theme(
+        data: theme,
+        child: ProjectScope(
+          project: _selection!.mobileSlug,
+          child: Scaffold(
+            appBar: AppBar(title: Text(home.label)),
+            body: _screen(context, m, home),
+          ),
+        ),
+      );
+    }
+
+    // Default to the nav item that points at the backend-defined home screen.
+    var homeIdx = 0;
+    if (m.home != null) {
+      final i = nav.indexWhere((n) => n.screen == m.home);
+      if (i >= 0) homeIdx = i;
+    }
+    final index = (_navIndex ?? homeIdx).clamp(0, nav.length - 1);
+    final current = nav[index];
     return Theme(
       data: theme,
       child: ProjectScope(
@@ -413,7 +407,9 @@ class _BappMobileAppState extends State<BappMobileApp> {
                   items: [
                     for (final n in nav)
                       BottomNavigationBarItem(
-                          icon: const Icon(Icons.dashboard), label: n.label),
+                          icon: bappIcon(n.icon,
+                              resolver: widget.config.iconResolver, size: 24),
+                          label: n.label),
                   ],
                 )
               : null,

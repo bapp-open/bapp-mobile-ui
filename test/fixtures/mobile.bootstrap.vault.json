@@ -10,6 +10,7 @@
       "mode": "light"
     }
   },
+  "home": "company_passwords.home",
   "navigation": [
     {
       "key": "home",

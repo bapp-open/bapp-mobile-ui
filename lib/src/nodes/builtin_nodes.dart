@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bapp_mobile_ui/src/models/node.dart';
 import 'package:bapp_mobile_ui/src/render/node_registry.dart';
+import 'package:bapp_mobile_ui/src/render/icon_resolver.dart';
 import 'package:bapp_mobile_ui/src/nodes/field_widget.dart';
 import 'package:bapp_mobile_ui/src/nodes/input_nodes.dart';
 import 'package:bapp_mobile_ui/src/nodes/device_nodes.dart';
@@ -10,7 +11,10 @@ import 'package:bapp_mobile_ui/src/render/navigation_dispatcher.dart';
 
 /// Registers the v1 built-in node kinds into [registry]. `list` is intentionally
 /// NOT registered here — it is handled by the list template.
-void registerBuiltinNodes(NodeRegistry registry) {
+///
+/// [iconResolver] lets the host app map backend icon names to its own (e.g.
+/// licensed Font Awesome) glyphs; when null, names fall back to Material icons.
+void registerBuiltinNodes(NodeRegistry registry, {IconResolver? iconResolver}) {
   registry.register('column', (c, n) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -65,7 +69,8 @@ void registerBuiltinNodes(NodeRegistry registry) {
     final label = n.props['label'] as String? ?? '';
     final inner = Card(
       child: ListTile(
-        leading: const Icon(Icons.dashboard_outlined),
+        leading: bappIcon(n.props['icon'] as String?,
+            resolver: iconResolver, size: 24),
         title: Text(label),
         trailing: n.onTap != null ? const Icon(Icons.chevron_right) : null,
       ),
@@ -78,7 +83,8 @@ void registerBuiltinNodes(NodeRegistry registry) {
     );
   });
   registry.register('icon', (c, n) {
-    final iconWidget = Icon(_iconFor(n.props['icon'] as String?), size: 20);
+    final iconWidget = bappIcon(n.props['icon'] as String?,
+        resolver: iconResolver, size: 20);
     if (n.onTap == null) return iconWidget;
     return InkWell(
       onTap: () => BappNavigationDispatcher.of(c)?.onNavigate(n.onTap!, RecordScope.of(c)),
@@ -87,25 +93,6 @@ void registerBuiltinNodes(NodeRegistry registry) {
   });
   registerInputNodes(registry);
   registerDeviceNodes(registry);
-}
-
-IconData _iconFor(String? name) {
-  switch (name) {
-    case 'fa-circle-info':
-    case 'info':
-      return Icons.info_outline;
-    case 'fa-key':
-    case 'key':
-      return Icons.key;
-    case 'fa-gear':
-    case 'settings':
-      return Icons.settings;
-    case 'fa-house':
-    case 'home':
-      return Icons.home;
-    default:
-      return Icons.circle;
-  }
 }
 
 Widget _button(BuildContext context, Node node) {
